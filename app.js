@@ -1,5 +1,5 @@
 // ============================================================
-// Track — Habit & Routine Tracker Application
+// Track — Task & Routine Tracker Application
 // Main Application Logic
 // ============================================================
 
@@ -38,11 +38,11 @@
 
   // ── State ──────────────────────────────────────────────────
   let state = {
-    habits: [],
+    tasks: [],
     routines: [],
     logs: [],
     activeTab: 'dashboard',
-    editingHabit: null,
+    editingTask: null,
     editingRoutine: null
   };
 
@@ -89,7 +89,7 @@
   function saveState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        habits: state.habits,
+        tasks: state.tasks,
         routines: state.routines,
         logs: state.logs
       }));
@@ -102,7 +102,7 @@
     try {
       const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (data) {
-        state.habits = data.habits || [];
+        state.tasks = data.tasks || [];
         state.routines = data.routines || [];
         state.logs = data.logs || [];
       }
@@ -112,8 +112,8 @@
   }
 
   // ── Data Queries ──────────────────────────────────────────
-  function getHabit(id) {
-    return state.habits.find(h => h.id === id);
+  function getTask(id) {
+    return state.tasks.find(h => h.id === id);
   }
 
   function getTodayLogs() {
@@ -121,28 +121,28 @@
     return state.logs.filter(l => l.date === t);
   }
 
-  function getLogsForHabit(habitId, days = 30) {
+  function getLogsForTask(taskId, days = 30) {
     const start = daysAgo(days);
-    return state.logs.filter(l => l.habitId === habitId && l.date >= start).sort((a, b) => a.date.localeCompare(b.date));
+    return state.logs.filter(l => l.taskId === taskId && l.date >= start).sort((a, b) => a.date.localeCompare(b.date));
   }
 
   function getLogsForDate(date) {
     return state.logs.filter(l => l.date === date);
   }
 
-  function isHabitCompletedToday(habitId) {
-    return getTodayLogs().some(l => l.habitId === habitId && l.completed);
+  function isTaskCompletedToday(taskId) {
+    return getTodayLogs().some(l => l.taskId === taskId && l.completed);
   }
 
-  function calculateStreak(habitId) {
+  function calculateStreak(taskId) {
     let streak = 0;
     let checkDate = today();
     // If not completed today, start checking from yesterday
-    if (!isHabitCompletedToday(habitId)) {
+    if (!isTaskCompletedToday(taskId)) {
       checkDate = daysAgo(1);
     }
     while (true) {
-      const hasLog = state.logs.some(l => l.habitId === habitId && l.date === checkDate && l.completed);
+      const hasLog = state.logs.some(l => l.taskId === taskId && l.date === checkDate && l.completed);
       if (!hasLog) break;
       streak++;
       const d = new Date(checkDate + 'T00:00:00');
@@ -152,8 +152,8 @@
     return streak;
   }
 
-  function calculateBestStreak(habitId) {
-    const logs = state.logs.filter(l => l.habitId === habitId && l.completed)
+  function calculateBestStreak(taskId) {
+    const logs = state.logs.filter(l => l.taskId === taskId && l.completed)
       .map(l => l.date).sort();
     if (logs.length === 0) return 0;
     let best = 1, current = 1;
@@ -168,27 +168,27 @@
     return best;
   }
 
-  function getCompletionRate(habitId, days = 30) {
+  function getCompletionRate(taskId, days = 30) {
     const start = daysAgo(days);
-    const logs = state.logs.filter(l => l.habitId === habitId && l.date >= start && l.completed);
+    const logs = state.logs.filter(l => l.taskId === taskId && l.date >= start && l.completed);
     return Math.round((logs.length / days) * 100);
   }
 
   function getTodayProgress() {
-    const dailyHabits = state.habits.filter(h => !h.archived);
-    if (dailyHabits.length === 0) return 0;
-    const completed = dailyHabits.filter(h => isHabitCompletedToday(h.id)).length;
-    return Math.round((completed / dailyHabits.length) * 100);
+    const dailyTasks = state.tasks.filter(h => !h.archived);
+    if (dailyTasks.length === 0) return 0;
+    const completed = dailyTasks.filter(h => isTaskCompletedToday(h.id)).length;
+    return Math.round((completed / dailyTasks.length) * 100);
   }
 
   function getWorkPlayBalance() {
     const logs30 = state.logs.filter(l => l.date >= daysAgo(30) && l.completed);
     const work = logs30.filter(l => {
-      const h = getHabit(l.habitId);
+      const h = getTask(l.taskId);
       return h && h.category === 'work';
     }).length;
     const play = logs30.filter(l => {
-      const h = getHabit(l.habitId);
+      const h = getTask(l.taskId);
       return h && h.category === 'play';
     }).length;
     const total = work + play;
@@ -199,10 +199,10 @@
     const start = daysAgo(days);
     let total = 0;
     state.logs.filter(l => l.date >= start && l.metricValues).forEach(l => {
-      const habit = getHabit(l.habitId);
-      if (!habit) return;
+      const task = getTask(l.taskId);
+      if (!task) return;
       (l.metricValues || []).forEach(mv => {
-        const metric = (habit.metrics || []).find(m => m.id === mv.metricId);
+        const metric = (task.metrics || []).find(m => m.id === mv.metricId);
         if (metric && metric.name === metricName) {
           total += mv.value || 0;
         }
@@ -211,9 +211,9 @@
     return total;
   }
 
-  function getPersonalRecord(habitId, metricId) {
+  function getPersonalRecord(taskId, metricId) {
     let best = { value: 0, date: null };
-    state.logs.filter(l => l.habitId === habitId && l.metricValues).forEach(l => {
+    state.logs.filter(l => l.taskId === taskId && l.metricValues).forEach(l => {
       (l.metricValues || []).forEach(mv => {
         if (mv.metricId === metricId && mv.value > best.value) {
           best = { value: mv.value, date: l.date };
@@ -223,10 +223,10 @@
     return best;
   }
 
-  function getMetricHistory(habitId, metricId, days = 30) {
+  function getMetricHistory(taskId, metricId, days = 30) {
     const start = daysAgo(days);
     const result = [];
-    state.logs.filter(l => l.habitId === habitId && l.date >= start && l.metricValues)
+    state.logs.filter(l => l.taskId === taskId && l.date >= start && l.metricValues)
       .sort((a, b) => a.date.localeCompare(b.date))
       .forEach(l => {
         const mv = (l.metricValues || []).find(m => m.metricId === metricId);
@@ -237,14 +237,14 @@
     return result;
   }
 
-  function getTargetHitRate(habitId, metricId, days = 30) {
-    const habit = getHabit(habitId);
-    if (!habit) return 0;
-    const metric = (habit.metrics || []).find(m => m.id === metricId);
+  function getTargetHitRate(taskId, metricId, days = 30) {
+    const task = getTask(taskId);
+    if (!task) return 0;
+    const metric = (task.metrics || []).find(m => m.id === metricId);
     if (!metric || !metric.target) return 0;
     const start = daysAgo(days);
     let hits = 0, total = 0;
-    state.logs.filter(l => l.habitId === habitId && l.date >= start && l.metricValues).forEach(l => {
+    state.logs.filter(l => l.taskId === taskId && l.date >= start && l.metricValues).forEach(l => {
       const mv = (l.metricValues || []).find(m => m.metricId === metricId);
       if (mv) {
         total++;
@@ -345,7 +345,7 @@
   function renderActiveView() {
     switch (state.activeTab) {
       case 'dashboard': renderDashboard(); break;
-      case 'habits': renderHabits(); break;
+      case 'tasks': renderTasks(); break;
       case 'routines': renderRoutines(); break;
       case 'log': renderLog(); break;
       case 'progress': renderProgress(); break;
@@ -357,7 +357,7 @@
     const container = $('#view-dashboard');
     const progress = getTodayProgress();
     const todayLogs = getTodayLogs();
-    const activeHabits = state.habits.filter(h => !h.archived);
+    const activeTasks = state.tasks.filter(h => !h.archived);
     const streak = getMaxStreak();
     const balance = getWorkPlayBalance();
 
@@ -382,7 +382,7 @@
 
         <div class="card stat-card">
           <span class="stat-icon">✅</span>
-          <span class="stat-value">${todayLogs.filter(l => l.completed).length}/${activeHabits.length}</span>
+          <span class="stat-value">${todayLogs.filter(l => l.completed).length}/${activeTasks.length}</span>
           <span class="stat-label">Done Today</span>
         </div>
 
@@ -407,11 +407,11 @@
       </div>
 
       <div class="section-header">
-        <h2>Today's Habits</h2>
+        <h2>Today's Tasks</h2>
       </div>
 
-      <div class="habits-today-list" id="habits-today">
-        ${activeHabits.length === 0 ? renderEmptyState('No habits yet', 'Add your first habit to get started!', 'Add Habit') : ''}
+      <div class="tasks-today-list" id="tasks-today">
+        ${activeTasks.length === 0 ? renderEmptyState('No tasks yet', 'Add your first task to get started!', 'Add Task') : ''}
       </div>
 
       <div class="card heatmap-card">
@@ -437,8 +437,8 @@
       }
     }
 
-    // Render today's habits
-    renderTodayHabits();
+    // Render today's tasks
+    renderTodayTasks();
 
     // Render heatmap
     renderHeatmap();
@@ -452,21 +452,21 @@
   }
 
   function getMaxStreak() {
-    const activeHabits = state.habits.filter(h => !h.archived);
-    if (activeHabits.length === 0) return 0;
-    return Math.max(...activeHabits.map(h => calculateStreak(h.id)), 0);
+    const activeTasks = state.tasks.filter(h => !h.archived);
+    if (activeTasks.length === 0) return 0;
+    return Math.max(...activeTasks.map(h => calculateStreak(h.id)), 0);
   }
 
   function getCompletionRateAll() {
-    const activeHabits = state.habits.filter(h => !h.archived);
-    if (activeHabits.length === 0) return 0;
-    const rates = activeHabits.map(h => getCompletionRate(h.id, 30));
+    const activeTasks = state.tasks.filter(h => !h.archived);
+    if (activeTasks.length === 0) return 0;
+    const rates = activeTasks.map(h => getCompletionRate(h.id, 30));
     return Math.round(rates.reduce((a, b) => a + b, 0) / rates.length);
   }
 
   function renderMetricSnapshots() {
     const metricsUsed = new Map();
-    state.habits.filter(h => !h.archived && h.metrics && h.metrics.length > 0).forEach(h => {
+    state.tasks.filter(h => !h.archived && h.metrics && h.metrics.length > 0).forEach(h => {
       h.metrics.forEach(m => {
         if (!metricsUsed.has(m.name)) {
           metricsUsed.set(m.name, { icon: m.icon, unit: m.unit, target: m.target || 0 });
@@ -518,10 +518,10 @@
     let total = 0;
     const t = today();
     state.logs.filter(l => l.date === t && l.metricValues).forEach(l => {
-      const habit = getHabit(l.habitId);
-      if (!habit) return;
+      const task = getTask(l.taskId);
+      if (!task) return;
       (l.metricValues || []).forEach(mv => {
-        const metric = (habit.metrics || []).find(m => m.id === mv.metricId);
+        const metric = (task.metrics || []).find(m => m.id === mv.metricId);
         if (metric && metric.name === metricName) {
           total += mv.value || 0;
         }
@@ -537,43 +537,43 @@
     return n.toFixed(1);
   }
 
-  function renderTodayHabits() {
-    const container = $('#habits-today');
+  function renderTodayTasks() {
+    const container = $('#tasks-today');
     if (!container) return;
-    const activeHabits = state.habits.filter(h => !h.archived);
-    if (activeHabits.length === 0) return;
+    const activeTasks = state.tasks.filter(h => !h.archived);
+    if (activeTasks.length === 0) return;
 
     container.innerHTML = '';
-    activeHabits.forEach(habit => {
-      const completed = isHabitCompletedToday(habit.id);
-      const streak = calculateStreak(habit.id);
-      const item = el('div', { className: `habit-item ${completed ? 'completed' : ''}` }, [
+    activeTasks.forEach(task => {
+      const completed = isTaskCompletedToday(task.id);
+      const streak = calculateStreak(task.id);
+      const item = el('div', { className: `task-item ${completed ? 'completed' : ''}` }, [
         el('button', {
-          className: `habit-check ${completed ? 'checked' : ''}`,
-          style: { '--cat-color': CATEGORIES[habit.category]?.color },
-          onClick: () => toggleHabitCompletion(habit.id)
+          className: `task-check ${completed ? 'checked' : ''}`,
+          style: { '--cat-color': CATEGORIES[task.category]?.color },
+          onClick: () => toggleTaskCompletion(task.id)
         }, [
           el('span', { className: 'check-icon', innerHTML: completed ? '✓' : '' })
         ]),
-        el('div', { className: 'habit-item-info' }, [
-          el('div', { className: 'habit-item-top' }, [
-            el('span', { className: 'habit-item-name', textContent: habit.name }),
-            categoryDot(habit.category),
+        el('div', { className: 'task-item-info' }, [
+          el('div', { className: 'task-item-top' }, [
+            el('span', { className: 'task-item-name', textContent: task.name }),
+            categoryDot(task.category),
           ]),
-          el('div', { className: 'habit-item-meta' }, [
+          el('div', { className: 'task-item-meta' }, [
             streak > 0 ? el('span', { className: `streak-badge ${streak >= 7 ? 'hot' : ''}`, innerHTML: `🔥 ${streak}` }) : null,
-            ...(habit.metrics || []).map(m => {
-              const todayLog = getTodayLogs().find(l => l.habitId === habit.id && l.metricValues);
+            ...(task.metrics || []).map(m => {
+              const todayLog = getTodayLogs().find(l => l.taskId === task.id && l.metricValues);
               const mv = todayLog ? (todayLog.metricValues || []).find(v => v.metricId === m.id) : null;
               return el('span', { className: 'metric-badge', textContent: `${m.icon} ${mv ? formatNumber(mv.value) : '—'} ${m.unit}` });
             })
           ].filter(Boolean))
         ]),
         el('button', {
-          className: 'habit-item-log-btn',
+          className: 'task-item-log-btn',
           textContent: '📝',
           title: 'Log details',
-          onClick: (e) => { e.stopPropagation(); openLogModal(habit.id); }
+          onClick: (e) => { e.stopPropagation(); openLogModal(task.id); }
         })
       ]);
       container.appendChild(item);
@@ -587,8 +587,8 @@
     for (let i = 0; i < 84; i++) { // 12 weeks
       const date = daysAgo(83 - i);
       const logs = getLogsForDate(date).filter(l => l.completed);
-      const totalHabits = state.habits.filter(h => !h.archived).length || 1;
-      const ratio = logs.length / totalHabits;
+      const totalTasks = state.tasks.filter(h => !h.archived).length || 1;
+      const ratio = logs.length / totalTasks;
       data[date] = ratio >= 1 ? 4 : ratio >= 0.75 ? 3 : ratio >= 0.5 ? 2 : ratio > 0 ? 1 : 0;
     }
     Charts.heatmap(container, data, { color: '#4f8cff', weeks: 12 });
@@ -605,16 +605,16 @@
     `;
   }
 
-  // ── Habits View ───────────────────────────────────────────
-  function renderHabits() {
-    const container = $('#view-habits');
-    const activeHabits = state.habits.filter(h => !h.archived);
-    const archivedHabits = state.habits.filter(h => h.archived);
+  // ── Tasks View ───────────────────────────────────────────
+  function renderTasks() {
+    const container = $('#view-tasks');
+    const activeTasks = state.tasks.filter(h => !h.archived);
+    const archivedTasks = state.tasks.filter(h => h.archived);
 
     container.innerHTML = `
       <div class="view-header">
-        <h1>Habits</h1>
-        <p class="text-muted">${activeHabits.length} active habit${activeHabits.length !== 1 ? 's' : ''}</p>
+        <h1>Tasks</h1>
+        <p class="text-muted">${activeTasks.length} active task${activeTasks.length !== 1 ? 's' : ''}</p>
       </div>
 
       <div class="category-filter" id="category-filter">
@@ -624,81 +624,81 @@
     ).join('')}
       </div>
 
-      <div class="habits-list" id="habits-list"></div>
+      <div class="tasks-list" id="tasks-list"></div>
 
-      ${archivedHabits.length > 0 ? `
+      ${archivedTasks.length > 0 ? `
         <div class="section-header mt-lg">
           <h2>Archived</h2>
           <button class="btn-text" id="toggle-archived">Show</button>
         </div>
-        <div class="habits-list archived-list hidden" id="archived-list"></div>
+        <div class="tasks-list archived-list hidden" id="archived-list"></div>
       ` : ''}
     `;
 
-    renderHabitsList('all');
+    renderTasksList('all');
     initCategoryFilter();
-    if (archivedHabits.length > 0) initArchivedToggle();
+    if (archivedTasks.length > 0) initArchivedToggle();
   }
 
-  function renderHabitsList(categoryFilter) {
-    const container = $('#habits-list');
+  function renderTasksList(categoryFilter) {
+    const container = $('#tasks-list');
     if (!container) return;
-    let habits = state.habits.filter(h => !h.archived);
-    if (categoryFilter !== 'all') habits = habits.filter(h => h.category === categoryFilter);
+    let tasks = state.tasks.filter(h => !h.archived);
+    if (categoryFilter !== 'all') tasks = tasks.filter(h => h.category === categoryFilter);
 
-    if (habits.length === 0) {
+    if (tasks.length === 0) {
       container.innerHTML = renderEmptyState(
-        categoryFilter === 'all' ? 'No habits yet' : `No ${CATEGORIES[categoryFilter]?.label} habits`,
-        'Tap + to add your first habit'
+        categoryFilter === 'all' ? 'No tasks yet' : `No ${CATEGORIES[categoryFilter]?.label} tasks`,
+        'Tap + to add your first task'
       );
       return;
     }
 
     container.innerHTML = '';
-    habits.forEach(habit => {
-      const streak = calculateStreak(habit.id);
-      const bestStreak = calculateBestStreak(habit.id);
-      const rate = getCompletionRate(habit.id, 30);
-      const completed = isHabitCompletedToday(habit.id);
+    tasks.forEach(task => {
+      const streak = calculateStreak(task.id);
+      const bestStreak = calculateBestStreak(task.id);
+      const rate = getCompletionRate(task.id, 30);
+      const completed = isTaskCompletedToday(task.id);
 
-      const card = el('div', { className: 'card habit-card', onClick: () => openHabitDetail(habit.id) }, [
-        el('div', { className: 'habit-card-header' }, [
-          el('div', { className: 'habit-card-title-row' }, [
-            el('span', { className: 'habit-card-icon', textContent: CATEGORIES[habit.category]?.icon }),
-            el('h3', { className: 'habit-card-name', textContent: habit.name }),
-            el('span', { className: `category-tag category-${habit.category}`, textContent: CATEGORIES[habit.category]?.label })
+      const card = el('div', { className: 'card task-card', onClick: () => openTaskDetail(task.id) }, [
+        el('div', { className: 'task-card-header' }, [
+          el('div', { className: 'task-card-title-row' }, [
+            el('span', { className: 'task-card-icon', textContent: CATEGORIES[task.category]?.icon }),
+            el('h3', { className: 'task-card-name', textContent: task.name }),
+            el('span', { className: `category-tag category-${task.category}`, textContent: CATEGORIES[task.category]?.label })
           ]),
-          el('div', { className: 'habit-card-actions' }, [
-            el('button', { className: 'btn-icon', textContent: '✏️', title: 'Edit', onClick: (e) => { e.stopPropagation(); openHabitModal(habit); } }),
-            el('button', { className: 'btn-icon', textContent: '📥', title: 'Archive', onClick: (e) => { e.stopPropagation(); archiveHabit(habit.id); } })
+          el('div', { className: 'task-card-actions' }, [
+            el('button', { className: 'btn-icon', textContent: '✏️', title: 'Edit', onClick: (e) => { e.stopPropagation(); openTaskModal(task); } }),
+            el('button', { className: 'btn-icon', textContent: '📥', title: 'Archive', onClick: (e) => { e.stopPropagation(); archiveTask(task.id); } })
           ])
         ]),
-        el('div', { className: 'habit-card-stats' }, [
-          el('div', { className: 'habit-stat' }, [
+        el('div', { className: 'task-card-stats' }, [
+          el('div', { className: 'task-stat' }, [
             el('span', { className: `streak-badge ${streak >= 7 ? 'hot' : ''}`, innerHTML: `🔥 ${streak}` }),
-            el('span', { className: 'habit-stat-label', textContent: 'Streak' })
+            el('span', { className: 'task-stat-label', textContent: 'Streak' })
           ]),
-          el('div', { className: 'habit-stat' }, [
-            el('span', { className: 'habit-stat-value', textContent: bestStreak.toString() }),
-            el('span', { className: 'habit-stat-label', textContent: 'Best' })
+          el('div', { className: 'task-stat' }, [
+            el('span', { className: 'task-stat-value', textContent: bestStreak.toString() }),
+            el('span', { className: 'task-stat-label', textContent: 'Best' })
           ]),
-          el('div', { className: 'habit-stat' }, [
-            el('span', { className: 'habit-stat-value', textContent: rate + '%' }),
-            el('span', { className: 'habit-stat-label', textContent: '30-day' })
+          el('div', { className: 'task-stat' }, [
+            el('span', { className: 'task-stat-value', textContent: rate + '%' }),
+            el('span', { className: 'task-stat-label', textContent: '30-day' })
           ]),
-          el('div', { className: 'habit-stat' }, [
+          el('div', { className: 'task-stat' }, [
             el('span', { className: `today-status ${completed ? 'done' : 'pending'}`, textContent: completed ? '✓' : '○' }),
-            el('span', { className: 'habit-stat-label', textContent: 'Today' })
+            el('span', { className: 'task-stat-label', textContent: 'Today' })
           ])
         ]),
-        ...(habit.metrics && habit.metrics.length > 0 ? [
-          el('div', { className: 'habit-card-metrics' },
-            habit.metrics.map(m => {
-              const pr = getPersonalRecord(habit.id, m.id);
-              return el('div', { className: 'habit-metric-row' }, [
-                el('span', { className: 'habit-metric-info', textContent: `${m.icon} ${m.name}` }),
-                m.target ? el('span', { className: 'habit-metric-target', textContent: `Target: ${formatNumber(m.target)} ${m.unit}` }) : null,
-                pr.value > 0 ? el('span', { className: 'habit-metric-pr', innerHTML: `🏆 PR: ${formatNumber(pr.value)} ${m.unit}` }) : null
+        ...(task.metrics && task.metrics.length > 0 ? [
+          el('div', { className: 'task-card-metrics' },
+            task.metrics.map(m => {
+              const pr = getPersonalRecord(task.id, m.id);
+              return el('div', { className: 'task-metric-row' }, [
+                el('span', { className: 'task-metric-info', textContent: `${m.icon} ${m.name}` }),
+                m.target ? el('span', { className: 'task-metric-target', textContent: `Target: ${formatNumber(m.target)} ${m.unit}` }) : null,
+                pr.value > 0 ? el('span', { className: 'task-metric-pr', innerHTML: `🏆 PR: ${formatNumber(pr.value)} ${m.unit}` }) : null
               ].filter(Boolean));
             })
           )
@@ -714,7 +714,7 @@
       chip.addEventListener('click', () => {
         chips.forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
-        renderHabitsList(chip.dataset.cat);
+        renderTasksList(chip.dataset.cat);
       });
     });
   }
@@ -728,16 +728,16 @@
       btn.textContent = list.classList.contains('hidden') ? 'Show' : 'Hide';
       if (!list.classList.contains('hidden')) {
         list.innerHTML = '';
-        state.habits.filter(h => h.archived).forEach(habit => {
-          const card = el('div', { className: 'card habit-card archived' }, [
-            el('div', { className: 'habit-card-header' }, [
-              el('div', { className: 'habit-card-title-row' }, [
-                el('span', { textContent: habit.name }),
-                el('span', { className: `category-tag category-${habit.category}`, textContent: CATEGORIES[habit.category]?.label })
+        state.tasks.filter(h => h.archived).forEach(task => {
+          const card = el('div', { className: 'card task-card archived' }, [
+            el('div', { className: 'task-card-header' }, [
+              el('div', { className: 'task-card-title-row' }, [
+                el('span', { textContent: task.name }),
+                el('span', { className: `category-tag category-${task.category}`, textContent: CATEGORIES[task.category]?.label })
               ]),
-              el('div', { className: 'habit-card-actions' }, [
-                el('button', { className: 'btn-icon', textContent: '📤', title: 'Restore', onClick: () => restoreHabit(habit.id) }),
-                el('button', { className: 'btn-icon', textContent: '🗑️', title: 'Delete', onClick: () => deleteHabit(habit.id) })
+              el('div', { className: 'task-card-actions' }, [
+                el('button', { className: 'btn-icon', textContent: '📤', title: 'Restore', onClick: () => restoreTask(task.id) }),
+                el('button', { className: 'btn-icon', textContent: '🗑️', title: 'Delete', onClick: () => deleteTask(task.id) })
               ])
             ])
           ]);
@@ -747,55 +747,55 @@
     });
   }
 
-  // ── Habit Detail (Bottom Sheet) ───────────────────────────
-  function openHabitDetail(habitId) {
-    const habit = getHabit(habitId);
-    if (!habit) return;
-    const streak = calculateStreak(habitId);
-    const bestStreak = calculateBestStreak(habitId);
-    const rate = getCompletionRate(habitId, 30);
+  // ── Task Detail (Bottom Sheet) ───────────────────────────
+  function openTaskDetail(taskId) {
+    const task = getTask(taskId);
+    if (!task) return;
+    const streak = calculateStreak(taskId);
+    const bestStreak = calculateBestStreak(taskId);
+    const rate = getCompletionRate(taskId, 30);
 
     const sheet = createBottomSheet(`
-      <div class="habit-detail">
-        <div class="habit-detail-header">
+      <div class="task-detail">
+        <div class="task-detail-header">
           <div>
-            <h2>${habit.name}</h2>
-            <span class="category-tag category-${habit.category}">${CATEGORIES[habit.category]?.icon} ${CATEGORIES[habit.category]?.label}</span>
+            <h2>${task.name}</h2>
+            <span class="category-tag category-${task.category}">${CATEGORIES[task.category]?.icon} ${CATEGORIES[task.category]?.label}</span>
           </div>
-          <div class="habit-detail-stats">
-            <div class="habit-stat"><span class="streak-badge ${streak >= 7 ? 'hot' : ''}">🔥 ${streak}</span><span class="habit-stat-label">Streak</span></div>
-            <div class="habit-stat"><span class="habit-stat-value">${bestStreak}</span><span class="habit-stat-label">Best</span></div>
-            <div class="habit-stat"><span class="habit-stat-value">${rate}%</span><span class="habit-stat-label">30-day</span></div>
+          <div class="task-detail-stats">
+            <div class="task-stat"><span class="streak-badge ${streak >= 7 ? 'hot' : ''}">🔥 ${streak}</span><span class="task-stat-label">Streak</span></div>
+            <div class="task-stat"><span class="task-stat-value">${bestStreak}</span><span class="task-stat-label">Best</span></div>
+            <div class="task-stat"><span class="task-stat-value">${rate}%</span><span class="task-stat-label">30-day</span></div>
           </div>
         </div>
 
-        ${habit.metrics && habit.metrics.length > 0 ? `
-          <div class="habit-detail-section">
+        ${task.metrics && task.metrics.length > 0 ? `
+          <div class="task-detail-section">
             <h3>Metrics & Progress</h3>
-            ${habit.metrics.map(m => `
+            ${task.metrics.map(m => `
               <div class="metric-detail-block">
                 <div class="metric-detail-header">
                   <span>${m.icon} ${m.name}</span>
                   ${m.target ? `<span class="text-muted">Target: ${formatNumber(m.target)} ${m.unit}</span>` : ''}
                 </div>
-                <div class="metric-chart" id="chart-${habitId}-${m.id}"></div>
+                <div class="metric-chart" id="chart-${taskId}-${m.id}"></div>
                 <div class="metric-stats-row">
-                  <span>🏆 PR: ${formatNumber(getPersonalRecord(habitId, m.id).value)} ${m.unit}</span>
-                  ${m.target ? `<span>🎯 Hit rate: ${getTargetHitRate(habitId, m.id)}%</span>` : ''}
+                  <span>🏆 PR: ${formatNumber(getPersonalRecord(taskId, m.id).value)} ${m.unit}</span>
+                  ${m.target ? `<span>🎯 Hit rate: ${getTargetHitRate(taskId, m.id)}%</span>` : ''}
                 </div>
               </div>
             `).join('')}
           </div>
         ` : ''}
 
-        <div class="habit-detail-section">
+        <div class="task-detail-section">
           <h3>Completion History</h3>
-          <div id="habit-history-chart-${habitId}"></div>
+          <div id="task-history-chart-${taskId}"></div>
         </div>
 
-        <div class="habit-detail-section">
+        <div class="task-detail-section">
           <h3>Recent Logs</h3>
-          <div class="recent-logs" id="recent-logs-${habitId}"></div>
+          <div class="recent-logs" id="recent-logs-${taskId}"></div>
         </div>
       </div>
     `);
@@ -805,14 +805,14 @@
 
     // Render metric charts
     setTimeout(() => {
-      if (window.Charts && habit.metrics) {
-        habit.metrics.forEach(m => {
-          const chartEl = $(`#chart-${habitId}-${m.id}`);
+      if (window.Charts && task.metrics) {
+        task.metrics.forEach(m => {
+          const chartEl = $(`#chart-${taskId}-${m.id}`);
           if (chartEl) {
-            const history = getMetricHistory(habitId, m.id, 30);
+            const history = getMetricHistory(taskId, m.id, 30);
             if (history.length > 0) {
               Charts.lineChart(chartEl, history, {
-                color: CATEGORIES[habit.category]?.color || '#4f8cff',
+                color: CATEGORIES[task.category]?.color || '#4f8cff',
                 targetValue: m.target || null,
                 showDots: true,
                 showArea: true,
@@ -827,25 +827,25 @@
       }
 
       // Completion bar chart
-      const historyChart = $(`#habit-history-chart-${habitId}`);
+      const historyChart = $(`#task-history-chart-${taskId}`);
       if (historyChart && window.Charts) {
         const data = [];
         for (let i = 6; i >= 0; i--) {
           const date = daysAgo(i);
-          const completed = state.logs.some(l => l.habitId === habitId && l.date === date && l.completed);
+          const completed = state.logs.some(l => l.taskId === taskId && l.date === date && l.completed);
           data.push({ label: DAYS[new Date(date + 'T00:00:00').getDay()], value: completed ? 1 : 0 });
         }
         Charts.barChart(historyChart, data, {
-          color: CATEGORIES[habit.category]?.color || '#4f8cff',
+          color: CATEGORIES[task.category]?.color || '#4f8cff',
           height: 100,
           animated: true
         });
       }
 
       // Recent logs
-      const recentContainer = $(`#recent-logs-${habitId}`);
+      const recentContainer = $(`#recent-logs-${taskId}`);
       if (recentContainer) {
-        const logs = getLogsForHabit(habitId, 14).reverse().slice(0, 10);
+        const logs = getLogsForTask(taskId, 14).reverse().slice(0, 10);
         if (logs.length === 0) {
           recentContainer.innerHTML = '<p class="text-muted">No logs yet</p>';
         } else {
@@ -854,7 +854,7 @@
               el('span', { className: 'log-date', textContent: formatDate(log.date) }),
               log.rating ? renderStars(log.rating) : null,
               ...(log.metricValues || []).map(mv => {
-                const metric = (habit.metrics || []).find(m => m.id === mv.metricId);
+                const metric = (task.metrics || []).find(m => m.id === mv.metricId);
                 return metric ? el('span', { className: 'metric-badge', textContent: `${metric.icon} ${formatNumber(mv.value)} ${metric.unit}` }) : null;
               }).filter(Boolean),
               log.notes ? el('span', { className: 'log-notes', textContent: log.notes }) : null
@@ -874,11 +874,11 @@
     container.innerHTML = `
       <div class="view-header">
         <h1>Routines</h1>
-        <p class="text-muted">Group habits into daily routines</p>
+        <p class="text-muted">Group tasks into daily routines</p>
       </div>
 
       <div class="routines-list" id="routines-list">
-        ${routines.length === 0 ? renderEmptyState('No routines yet', 'Create a routine to organize your daily habits', 'Create Routine') : ''}
+        ${routines.length === 0 ? renderEmptyState('No routines yet', 'Create a routine to organize your daily tasks', 'Create Routine') : ''}
       </div>
     `;
 
@@ -901,9 +901,9 @@
       const timeLabels = { morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening' };
 
       routines.forEach(routine => {
-        const habits = routine.habitIds.map(id => getHabit(id)).filter(Boolean);
-        const completedCount = habits.filter(h => isHabitCompletedToday(h.id)).length;
-        const progress = habits.length > 0 ? Math.round((completedCount / habits.length) * 100) : 0;
+        const tasks = routine.taskIds.map(id => getTask(id)).filter(Boolean);
+        const completedCount = tasks.filter(h => isTaskCompletedToday(h.id)).length;
+        const progress = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
 
         const block = el('div', { className: 'card routine-block' }, [
           el('div', { className: 'routine-block-header' }, [
@@ -917,19 +917,19 @@
             ])
           ]),
           routine.description ? el('p', { className: 'routine-desc text-muted', textContent: routine.description }) : null,
-          el('div', { className: 'routine-habits' },
-            habits.map(habit => {
-              const completed = isHabitCompletedToday(habit.id);
-              return el('div', { className: `routine-habit-item ${completed ? 'completed' : ''}` }, [
+          el('div', { className: 'routine-tasks' },
+            tasks.map(task => {
+              const completed = isTaskCompletedToday(task.id);
+              return el('div', { className: `routine-task-item ${completed ? 'completed' : ''}` }, [
                 el('button', {
-                  className: `habit-check small ${completed ? 'checked' : ''}`,
-                  style: { '--cat-color': CATEGORIES[habit.category]?.color },
-                  onClick: () => { toggleHabitCompletion(habit.id); renderRoutines(); }
+                  className: `task-check small ${completed ? 'checked' : ''}`,
+                  style: { '--cat-color': CATEGORIES[task.category]?.color },
+                  onClick: () => { toggleTaskCompletion(task.id); renderRoutines(); }
                 }, [
                   el('span', { className: 'check-icon', innerHTML: completed ? '✓' : '' })
                 ]),
-                el('span', { textContent: habit.name }),
-                categoryDot(habit.category)
+                el('span', { textContent: task.name }),
+                categoryDot(task.category)
               ]);
             })
           ),
@@ -937,7 +937,7 @@
             el('div', { className: 'routine-progress-bar' }, [
               el('div', { className: 'routine-progress-fill', style: { width: progress + '%' } })
             ]),
-            el('span', { className: 'routine-progress-text text-muted', textContent: `${completedCount}/${habits.length}` })
+            el('span', { className: 'routine-progress-text text-muted', textContent: `${completedCount}/${tasks.length}` })
           ])
         ].filter(Boolean));
         container.appendChild(block);
@@ -977,13 +977,13 @@
 
     if (filter !== 'all') {
       logs = logs.filter(l => {
-        const h = getHabit(l.habitId);
+        const h = getTask(l.taskId);
         return h && h.category === filter;
       });
     }
 
     if (logs.length === 0) {
-      container.innerHTML = renderEmptyState('No logs yet', 'Complete a habit to see your activity log');
+      container.innerHTML = renderEmptyState('No logs yet', 'Complete a task to see your activity log');
       return;
     }
 
@@ -991,8 +991,8 @@
     let currentDate = '';
 
     logs.forEach(log => {
-      const habit = getHabit(log.habitId);
-      if (!habit) return;
+      const task = getTask(log.taskId);
+      if (!task) return;
 
       if (log.date !== currentDate) {
         currentDate = log.date;
@@ -1001,19 +1001,19 @@
 
       const entry = el('div', { className: 'card log-entry' }, [
         el('div', { className: 'log-entry-header' }, [
-          el('div', { className: 'log-entry-habit' }, [
-            categoryDot(habit.category),
-            el('span', { className: 'log-entry-name', textContent: habit.name }),
+          el('div', { className: 'log-entry-task' }, [
+            categoryDot(task.category),
+            el('span', { className: 'log-entry-name', textContent: task.name }),
             log.completed ? el('span', { className: 'log-completed-badge', textContent: '✓' }) : null
           ].filter(Boolean)),
           el('div', { className: 'log-entry-actions' }, [
-            el('button', { className: 'btn-icon small', textContent: '✏️', onClick: () => openLogModal(habit.id, log) }),
+            el('button', { className: 'btn-icon small', textContent: '✏️', onClick: () => openLogModal(task.id, log) }),
             el('button', { className: 'btn-icon small', textContent: '🗑️', onClick: () => { deleteLog(log.id); renderLog(); } })
           ])
         ]),
         (log.metricValues && log.metricValues.length > 0) ? el('div', { className: 'log-entry-metrics' },
           log.metricValues.map(mv => {
-            const metric = (habit.metrics || []).find(m => m.id === mv.metricId);
+            const metric = (task.metrics || []).find(m => m.id === mv.metricId);
             return metric ? el('span', { className: 'metric-badge', textContent: `${metric.icon} ${formatNumber(mv.value)} ${metric.unit}` }) : null;
           }).filter(Boolean)
         ) : null,
@@ -1038,8 +1038,8 @@
   // ── Progress View ─────────────────────────────────────────
   function renderProgress() {
     const container = $('#view-progress');
-    const activeHabits = state.habits.filter(h => !h.archived);
-    const habitsWithMetrics = activeHabits.filter(h => h.metrics && h.metrics.length > 0);
+    const activeTasks = state.tasks.filter(h => !h.archived);
+    const tasksWithMetrics = activeTasks.filter(h => h.metrics && h.metrics.length > 0);
 
     container.innerHTML = `
       <div class="view-header">
@@ -1053,7 +1053,7 @@
         <button class="filter-chip" data-days="90">90 Days</button>
       </div>
 
-      ${habitsWithMetrics.length === 0 ? renderEmptyState('No metrics tracked', 'Add metrics to your habits to see progress charts') : ''}
+      ${tasksWithMetrics.length === 0 ? renderEmptyState('No metrics tracked', 'Add metrics to your tasks to see progress charts') : ''}
 
       <div id="progress-charts"></div>
 
@@ -1079,28 +1079,28 @@
     if (!container) return;
     container.innerHTML = '';
 
-    const habitsWithMetrics = state.habits.filter(h => !h.archived && h.metrics && h.metrics.length > 0);
+    const tasksWithMetrics = state.tasks.filter(h => !h.archived && h.metrics && h.metrics.length > 0);
 
-    habitsWithMetrics.forEach(habit => {
-      habit.metrics.forEach(m => {
-        const history = getMetricHistory(habit.id, m.id, days);
+    tasksWithMetrics.forEach(task => {
+      task.metrics.forEach(m => {
+        const history = getMetricHistory(task.id, m.id, days);
         if (history.length === 0) return;
 
         const chartCard = el('div', { className: 'card chart-card' }, [
           el('div', { className: 'chart-card-header' }, [
-            el('span', { textContent: `${m.icon} ${habit.name} — ${m.name}` }),
+            el('span', { textContent: `${m.icon} ${task.name} — ${m.name}` }),
             m.target ? el('span', { className: 'text-muted', textContent: `Target: ${formatNumber(m.target)} ${m.unit}` }) : null
           ].filter(Boolean)),
-          el('div', { className: 'chart-container', id: `progress-chart-${habit.id}-${m.id}` })
+          el('div', { className: 'chart-container', id: `progress-chart-${task.id}-${m.id}` })
         ]);
         container.appendChild(chartCard);
 
         setTimeout(() => {
           if (window.Charts) {
-            const chartEl = $(`#progress-chart-${habit.id}-${m.id}`);
+            const chartEl = $(`#progress-chart-${task.id}-${m.id}`);
             if (chartEl) {
               Charts.lineChart(chartEl, history, {
-                color: CATEGORIES[habit.category]?.color || '#4f8cff',
+                color: CATEGORIES[task.category]?.color || '#4f8cff',
                 targetValue: m.target || null,
                 showDots: true,
                 showArea: true,
@@ -1120,16 +1120,16 @@
     container.innerHTML = '';
     let hasRecords = false;
 
-    state.habits.filter(h => !h.archived && h.metrics && h.metrics.length > 0).forEach(habit => {
-      habit.metrics.forEach(m => {
-        const pr = getPersonalRecord(habit.id, m.id);
+    state.tasks.filter(h => !h.archived && h.metrics && h.metrics.length > 0).forEach(task => {
+      task.metrics.forEach(m => {
+        const pr = getPersonalRecord(task.id, m.id);
         if (pr.value > 0) {
           hasRecords = true;
           container.appendChild(el('div', { className: 'record-card' }, [
             el('span', { className: 'record-trophy', textContent: '🏆' }),
             el('div', { className: 'record-info' }, [
               el('span', { className: 'record-metric', textContent: `${m.icon} ${m.name}` }),
-              el('span', { className: 'record-habit text-muted', textContent: habit.name })
+              el('span', { className: 'record-task text-muted', textContent: task.name })
             ]),
             el('div', { className: 'record-value-block' }, [
               el('span', { className: 'record-value', textContent: `${formatNumber(pr.value)} ${m.unit}` }),
@@ -1152,7 +1152,7 @@
     let hasData = false;
 
     const metricsUsed = new Map();
-    state.habits.filter(h => !h.archived && h.metrics && h.metrics.length > 0).forEach(h => {
+    state.tasks.filter(h => !h.archived && h.metrics && h.metrics.length > 0).forEach(h => {
       h.metrics.forEach(m => {
         if (!metricsUsed.has(m.name)) metricsUsed.set(m.name, { icon: m.icon, unit: m.unit });
       });
@@ -1186,10 +1186,10 @@
     const end = daysAgo(daysAgoEnd);
     let total = 0;
     state.logs.filter(l => l.date >= start && l.date < end && l.metricValues).forEach(l => {
-      const habit = getHabit(l.habitId);
-      if (!habit) return;
+      const task = getTask(l.taskId);
+      if (!task) return;
       (l.metricValues || []).forEach(mv => {
-        const metric = (habit.metrics || []).find(m => m.id === mv.metricId);
+        const metric = (task.metrics || []).find(m => m.id === mv.metricId);
         if (metric && metric.name === metricName) total += mv.value || 0;
       });
     });
@@ -1207,10 +1207,10 @@
     });
   }
 
-  // ── Habit Actions ─────────────────────────────────────────
-  function toggleHabitCompletion(habitId) {
+  // ── Task Actions ─────────────────────────────────────────
+  function toggleTaskCompletion(taskId) {
     const t = today();
-    const existingLog = state.logs.find(l => l.habitId === habitId && l.date === t && l.completed);
+    const existingLog = state.logs.find(l => l.taskId === taskId && l.date === t && l.completed);
 
     if (existingLog) {
       // Uncomplete
@@ -1221,16 +1221,16 @@
     }
 
     // Quick complete (no metrics)
-    const habit = getHabit(habitId);
-    if (habit && habit.metrics && habit.metrics.length > 0) {
-      openLogModal(habitId);
+    const task = getTask(taskId);
+    if (task && task.metrics && task.metrics.length > 0) {
+      openLogModal(taskId);
       return;
     }
 
     // Simple completion
     state.logs.push({
       id: generateId(),
-      habitId,
+      taskId,
       date: t,
       completed: true,
       notes: '',
@@ -1240,23 +1240,23 @@
     });
     saveState();
     renderActiveView();
-    showToast('Habit completed! ✓');
+    showToast('Task completed! ✓');
 
-    // Check if all habits completed
+    // Check if all tasks completed
     checkAllCompleted();
   }
 
   function checkAllCompleted() {
-    const activeHabits = state.habits.filter(h => !h.archived);
-    const allDone = activeHabits.length > 0 && activeHabits.every(h => isHabitCompletedToday(h.id));
+    const activeTasks = state.tasks.filter(h => !h.archived);
+    const allDone = activeTasks.length > 0 && activeTasks.every(h => isTaskCompletedToday(h.id));
     if (allDone && window.Confetti) {
       window.Confetti.celebrate();
-      showToast('🎉 All habits completed! Amazing!');
+      showToast('🎉 All tasks completed! Amazing!');
     }
   }
 
-  function createHabit(data) {
-    const habit = {
+  function createTask(data) {
+    const task = {
       id: generateId(),
       name: data.name,
       category: data.category,
@@ -1271,18 +1271,18 @@
       archived: false,
       createdAt: Date.now()
     };
-    state.habits.push(habit);
+    state.tasks.push(task);
     saveState();
     renderActiveView();
-    showToast(`"${habit.name}" created! 🎯`);
+    showToast(`"${task.name}" created! 🎯`);
   }
 
-  function updateHabit(habitId, data) {
-    const habit = getHabit(habitId);
-    if (!habit) return;
-    habit.name = data.name;
-    habit.category = data.category;
-    habit.frequency = data.frequency || 'daily';
+  function updateTask(taskId, data) {
+    const task = getTask(taskId);
+    if (!task) return;
+    task.name = data.name;
+    task.category = data.category;
+    task.frequency = data.frequency || 'daily';
     // Update metrics carefully to preserve IDs
     const newMetrics = (data.metrics || []).map(m => {
       if (m.id) return m; // existing metric
@@ -1294,51 +1294,51 @@
         icon: m.icon
       };
     });
-    habit.metrics = newMetrics;
+    task.metrics = newMetrics;
     saveState();
     renderActiveView();
-    showToast(`"${habit.name}" updated`);
+    showToast(`"${task.name}" updated`);
   }
 
-  function archiveHabit(habitId) {
-    const habit = getHabit(habitId);
-    if (!habit) return;
-    habit.archived = true;
+  function archiveTask(taskId) {
+    const task = getTask(taskId);
+    if (!task) return;
+    task.archived = true;
     saveState();
     renderActiveView();
-    showToast(`"${habit.name}" archived`);
+    showToast(`"${task.name}" archived`);
   }
 
-  function restoreHabit(habitId) {
-    const habit = getHabit(habitId);
-    if (!habit) return;
-    habit.archived = false;
+  function restoreTask(taskId) {
+    const task = getTask(taskId);
+    if (!task) return;
+    task.archived = false;
     saveState();
     renderActiveView();
-    showToast(`"${habit.name}" restored`);
+    showToast(`"${task.name}" restored`);
   }
 
-  function deleteHabit(habitId) {
-    state.habits = state.habits.filter(h => h.id !== habitId);
-    state.logs = state.logs.filter(l => l.habitId !== habitId);
+  function deleteTask(taskId) {
+    state.tasks = state.tasks.filter(h => h.id !== taskId);
+    state.logs = state.logs.filter(l => l.taskId !== taskId);
     state.routines.forEach(r => {
-      r.habitIds = r.habitIds.filter(id => id !== habitId);
+      r.taskIds = r.taskIds.filter(id => id !== taskId);
     });
     saveState();
     renderActiveView();
-    showToast('Habit deleted');
+    showToast('Task deleted');
   }
 
   // ── Log Actions ───────────────────────────────────────────
   function createLog(data) {
-    // Remove existing log for same habit+date if completing
+    // Remove existing log for same task+date if completing
     if (data.completed) {
-      state.logs = state.logs.filter(l => !(l.habitId === data.habitId && l.date === data.date && l.completed));
+      state.logs = state.logs.filter(l => !(l.taskId === data.taskId && l.date === data.date && l.completed));
     }
 
     state.logs.push({
       id: generateId(),
-      habitId: data.habitId,
+      taskId: data.taskId,
       date: data.date || today(),
       completed: data.completed !== false,
       notes: data.notes || '',
@@ -1373,7 +1373,7 @@
       id: generateId(),
       name: data.name,
       timeOfDay: data.timeOfDay,
-      habitIds: data.habitIds || [],
+      taskIds: data.taskIds || [],
       description: data.description || '',
       createdAt: Date.now()
     });
@@ -1433,18 +1433,18 @@
     }
   }
 
-  // ── Habit Modal ───────────────────────────────────────────
-  function openHabitModal(existingHabit = null) {
-    const isEdit = !!existingHabit;
-    let metrics = isEdit ? [...(existingHabit.metrics || [])] : [];
-    let selectedCategory = isEdit ? existingHabit.category : 'work';
+  // ── Task Modal ───────────────────────────────────────────
+  function openTaskModal(existingTask = null) {
+    const isEdit = !!existingTask;
+    let metrics = isEdit ? [...(existingTask.metrics || [])] : [];
+    let selectedCategory = isEdit ? existingTask.category : 'work';
 
     const sheet = createBottomSheet(`
-      <h2>${isEdit ? 'Edit Habit' : 'New Habit'}</h2>
-      <form id="habit-form" class="sheet-form">
+      <h2>${isEdit ? 'Edit Task' : 'New Task'}</h2>
+      <form id="task-form" class="sheet-form">
         <div class="form-group">
-          <label>Habit Name</label>
-          <input type="text" id="habit-name" placeholder="e.g., Morning Run" value="${isEdit ? existingHabit.name : ''}" required>
+          <label>Task Name</label>
+          <input type="text" id="task-name" placeholder="e.g., Morning Run" value="${isEdit ? existingTask.name : ''}" required>
         </div>
 
         <div class="form-group">
@@ -1460,9 +1460,9 @@
 
         <div class="form-group">
           <label>Frequency</label>
-          <select id="habit-frequency">
-            <option value="daily" ${!isEdit || existingHabit.frequency === 'daily' ? 'selected' : ''}>Daily</option>
-            <option value="weekly" ${isEdit && existingHabit.frequency === 'weekly' ? 'selected' : ''}>Weekly</option>
+          <select id="task-frequency">
+            <option value="daily" ${!isEdit || existingTask.frequency === 'daily' ? 'selected' : ''}>Daily</option>
+            <option value="weekly" ${isEdit && existingTask.frequency === 'weekly' ? 'selected' : ''}>Weekly</option>
           </select>
         </div>
 
@@ -1474,7 +1474,7 @@
 
         <div class="form-actions">
           <button type="button" class="btn btn-secondary" onclick="document.querySelector('.bottom-sheet-wrapper .bottom-sheet-overlay').click()">Cancel</button>
-          <button type="submit" class="btn btn-primary">${isEdit ? 'Save Changes' : 'Create Habit'}</button>
+          <button type="submit" class="btn btn-primary">${isEdit ? 'Save Changes' : 'Create Task'}</button>
         </div>
       </form>
     `);
@@ -1511,20 +1511,20 @@
     sheet.querySelector('#add-metric-btn').addEventListener('click', () => openMetricPicker(m => { metrics.push(m); renderMetrics(); }));
 
     // Submit
-    sheet.querySelector('#habit-form').addEventListener('submit', e => {
+    sheet.querySelector('#task-form').addEventListener('submit', e => {
       e.preventDefault();
-      const name = sheet.querySelector('#habit-name').value.trim();
+      const name = sheet.querySelector('#task-name').value.trim();
       if (!name) return;
 
       const data = {
         name,
         category: selectedCategory,
-        frequency: sheet.querySelector('#habit-frequency').value,
+        frequency: sheet.querySelector('#task-frequency').value,
         metrics
       };
 
-      if (isEdit) updateHabit(existingHabit.id, data);
-      else createHabit(data);
+      if (isEdit) updateTask(existingTask.id, data);
+      else createTask(data);
 
       closeBottomSheet();
     });
@@ -1585,19 +1585,19 @@
   }
 
   // ── Log Modal ─────────────────────────────────────────────
-  function openLogModal(habitId, existingLog = null) {
-    const habit = getHabit(habitId);
-    if (!habit) return;
+  function openLogModal(taskId, existingLog = null) {
+    const task = getTask(taskId);
+    if (!task) return;
     const isEdit = !!existingLog;
 
     const sheet = createBottomSheet(`
       <h2>${isEdit ? 'Edit Log' : 'Log Activity'}</h2>
-      <p class="text-muted">${habit.name}</p>
+      <p class="text-muted">${task.name}</p>
       <form id="log-form" class="sheet-form">
-        ${habit.metrics && habit.metrics.length > 0 ? `
+        ${task.metrics && task.metrics.length > 0 ? `
           <div class="form-group">
             <label>Metrics</label>
-            ${habit.metrics.map(m => {
+            ${task.metrics.map(m => {
       const existing = isEdit && existingLog.metricValues ? existingLog.metricValues.find(v => v.metricId === m.id) : null;
       return `
                 <div class="metric-input-row">
@@ -1645,13 +1645,13 @@
     // Submit
     sheet.querySelector('#log-form').addEventListener('submit', e => {
       e.preventDefault();
-      const metricValues = (habit.metrics || []).map(m => {
+      const metricValues = (task.metrics || []).map(m => {
         const input = sheet.querySelector(`#metric-${m.id}`);
         return { metricId: m.id, value: parseFloat(input?.value) || 0 };
       }).filter(mv => mv.value > 0);
 
       const data = {
-        habitId,
+        taskId,
         date: isEdit ? existingLog.date : today(),
         completed: true,
         notes: sheet.querySelector('#log-notes').value.trim(),
@@ -1669,8 +1669,8 @@
   // ── Routine Modal ─────────────────────────────────────────
   function openRoutineModal(existingRoutine = null) {
     const isEdit = !!existingRoutine;
-    const activeHabits = state.habits.filter(h => !h.archived);
-    let selectedHabits = isEdit ? [...existingRoutine.habitIds] : [];
+    const activeTasks = state.tasks.filter(h => !h.archived);
+    let selectedTasks = isEdit ? [...existingRoutine.taskIds] : [];
 
     const sheet = createBottomSheet(`
       <h2>${isEdit ? 'Edit Routine' : 'New Routine'}</h2>
@@ -1695,13 +1695,13 @@
         </div>
 
         <div class="form-group">
-          <label>Habits in this Routine</label>
-          <div class="habit-selector" id="habit-selector">
-            ${activeHabits.length === 0 ? '<p class="text-muted">Create some habits first</p>' : ''}
-            ${activeHabits.map(h => `
-              <label class="habit-select-item">
-                <input type="checkbox" value="${h.id}" ${selectedHabits.includes(h.id) ? 'checked' : ''}>
-                <span class="habit-select-dot" style="background: ${CATEGORIES[h.category]?.color}"></span>
+          <label>Tasks in this Routine</label>
+          <div class="task-selector" id="task-selector">
+            ${activeTasks.length === 0 ? '<p class="text-muted">Create some tasks first</p>' : ''}
+            ${activeTasks.map(h => `
+              <label class="task-select-item">
+                <input type="checkbox" value="${h.id}" ${selectedTasks.includes(h.id) ? 'checked' : ''}>
+                <span class="task-select-dot" style="background: ${CATEGORIES[h.category]?.color}"></span>
                 <span>${h.name}</span>
               </label>
             `).join('')}
@@ -1734,13 +1734,13 @@
       const name = sheet.querySelector('#routine-name').value.trim();
       if (!name) return;
 
-      const habitIds = Array.from(sheet.querySelectorAll('#habit-selector input:checked')).map(cb => cb.value);
+      const taskIds = Array.from(sheet.querySelectorAll('#task-selector input:checked')).map(cb => cb.value);
 
       const data = {
         name,
         timeOfDay: selectedTime,
         description: sheet.querySelector('#routine-desc').value.trim(),
-        habitIds
+        taskIds
       };
 
       if (isEdit) updateRoutine(existingRoutine.id, data);
@@ -1760,15 +1760,15 @@
       const menu = el('div', { className: 'fab-menu' }, [
         el('div', { className: 'fab-menu-overlay', onClick: closeFabMenu }),
         el('div', { className: 'fab-menu-items' }, [
-          el('button', { className: 'fab-menu-item', onClick: () => { closeFabMenu(); openHabitModal(); } }, [
+          el('button', { className: 'fab-menu-item', onClick: () => { closeFabMenu(); openTaskModal(); } }, [
             el('span', { className: 'fab-menu-icon', textContent: '🎯' }),
-            el('span', { textContent: 'New Habit' })
+            el('span', { textContent: 'New Task' })
           ]),
           el('button', { className: 'fab-menu-item', onClick: () => { closeFabMenu(); openRoutineModal(); } }, [
             el('span', { className: 'fab-menu-icon', textContent: '🔁' }),
             el('span', { textContent: 'New Routine' })
           ]),
-          state.habits.length > 0 ? el('button', { className: 'fab-menu-item', onClick: () => { closeFabMenu(); openQuickLogPicker(); } }, [
+          state.tasks.length > 0 ? el('button', { className: 'fab-menu-item', onClick: () => { closeFabMenu(); openQuickLogPicker(); } }, [
             el('span', { className: 'fab-menu-icon', textContent: '📝' }),
             el('span', { textContent: 'Quick Log' })
           ]) : null
@@ -1789,16 +1789,16 @@
   }
 
   function openQuickLogPicker() {
-    const activeHabits = state.habits.filter(h => !h.archived);
+    const activeTasks = state.tasks.filter(h => !h.archived);
     const sheet = createBottomSheet(`
       <h2>Quick Log</h2>
-      <p class="text-muted">Select a habit to log</p>
+      <p class="text-muted">Select a task to log</p>
       <div class="quick-log-list">
-        ${activeHabits.map(h => `
+        ${activeTasks.map(h => `
           <button class="quick-log-item" data-id="${h.id}">
-            <span class="habit-select-dot" style="background: ${CATEGORIES[h.category]?.color}"></span>
+            <span class="task-select-dot" style="background: ${CATEGORIES[h.category]?.color}"></span>
             <span>${h.name}</span>
-            <span class="text-muted">${isHabitCompletedToday(h.id) ? '✓ Done' : ''}</span>
+            <span class="text-muted">${isTaskCompletedToday(h.id) ? '✓ Done' : ''}</span>
           </button>
         `).join('')}
       </div>

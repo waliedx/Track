@@ -1,5 +1,5 @@
 /* ============================================================
-   TRACK — Premium Habit Tracker Design System
+   TRACK — Premium Task Tracker Design System
    Mobile-first · Dark Theme · Glassmorphism
    ============================================================ */
 
@@ -377,9 +377,9 @@ ul, ol {
 
 
 /* ============================================================
-   7. Habit Item
+   7. Task Item
    ============================================================ */
-.habit-item {
+.task-item {
   display: flex;
   align-items: center;
   gap: var(--space-md);
@@ -391,16 +391,16 @@ ul, ol {
   overflow: hidden;
 }
 
-.habit-item:last-child {
+.task-item:last-child {
   border-bottom: none;
 }
 
-.habit-item:active {
+.task-item:active {
   background: rgba(255, 255, 255, 0.02);
 }
 
 /* Custom Checkbox */
-.habit-check {
+.task-check {
   position: relative;
   width: 28px;
   height: 28px;
@@ -414,7 +414,7 @@ ul, ol {
   transition: border-color var(--transition-base), background var(--transition-base), box-shadow var(--transition-base);
 }
 
-.habit-check input[type="checkbox"] {
+.task-check input[type="checkbox"] {
   position: absolute;
   opacity: 0;
   width: 100%;
@@ -423,7 +423,7 @@ ul, ol {
   margin: 0;
 }
 
-.habit-check__indicator {
+.task-check__indicator {
   width: 100%;
   height: 100%;
   border-radius: var(--radius-circle);
@@ -433,7 +433,7 @@ ul, ol {
   transition: background var(--transition-base), transform var(--transition-spring);
 }
 
-.habit-check__indicator::after {
+.task-check__indicator::after {
   content: '✓';
   font-size: var(--fs-sm);
   font-weight: 700;
@@ -443,27 +443,27 @@ ul, ol {
   transition: opacity var(--transition-fast), transform var(--transition-spring);
 }
 
-.habit-check input[type="checkbox"]:checked ~ .habit-check__indicator {
+.task-check input[type="checkbox"]:checked ~ .task-check__indicator {
   background: var(--category-color, var(--accent-primary));
   animation: checkPop 350ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.habit-check input[type="checkbox"]:checked ~ .habit-check__indicator::after {
+.task-check input[type="checkbox"]:checked ~ .task-check__indicator::after {
   opacity: 1;
   transform: scale(1);
 }
 
-.habit-check:has(input:checked) {
+.task-check:has(input:checked) {
   border-color: var(--category-color, var(--accent-primary));
   box-shadow: 0 0 12px rgba(79, 140, 255, 0.2);
 }
 
-.habit-item__info {
+.task-item__info {
   flex: 1;
   min-width: 0;
 }
 
-.habit-item__name {
+.task-item__name {
   font-size: var(--fs-base);
   font-weight: 500;
   color: var(--text-primary);
@@ -472,14 +472,14 @@ ul, ol {
   text-overflow: ellipsis;
 }
 
-.habit-item__meta {
+.task-item__meta {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
   margin-top: 0.15rem;
 }
 
-.habit-item__category-dot {
+.task-item__category-dot {
   width: 8px;
   height: 8px;
   border-radius: var(--radius-circle);
@@ -487,19 +487,19 @@ ul, ol {
   flex-shrink: 0;
 }
 
-.habit-item__streak {
+.task-item__streak {
   font-size: var(--fs-xs);
   color: var(--text-muted);
   font-weight: 500;
 }
 
-.habit-item__completed .habit-item__name {
+.task-item__completed .task-item__name {
   text-decoration: line-through;
   opacity: 0.5;
 }
 
 /* Swipe hint */
-.habit-item__swipe-hint {
+.task-item__swipe-hint {
   position: absolute;
   right: -60px;
   top: 0;
@@ -1105,7 +1105,7 @@ select {
   font-weight: 500;
 }
 
-.log-entry__habit-name {
+.log-entry__task-name {
   font-size: var(--fs-base);
   font-weight: 600;
   color: var(--text-primary);
@@ -2232,12 +2232,12 @@ main {
   font-weight: 700;
 }
 
-/* ── Habits Today List ──────────────────────────────────── */
-.habits-today-list {
+/* ── Tasks Today List ──────────────────────────────────── */
+.tasks-today-list {
   margin-bottom: var(--space-lg);
 }
 
-.habit-item {
+.task-item {
   display: flex;
   align-items: center;
   gap: var(--space-md);
@@ -2247,19 +2247,19 @@ main {
   transition: background var(--transition-fast), opacity var(--transition-base);
 }
 
-.habit-item:last-child {
+.task-item:last-child {
   border-bottom: none;
 }
 
-.habit-item.completed {
+.task-item.completed {
   opacity: 0.55;
 }
 
-.habit-item.completed .habit-item-name {
+.task-item.completed .task-item-name {
   text-decoration: line-through;
 }
 
-.habit-check {
+.task-check {
   position: relative;
   width: 28px;
   height: 28px;
@@ -2273,13 +2273,13 @@ main {
   cursor: pointer;
 }
 
-.habit-check.small {
+.task-check.small {
   width: 22px;
   height: 22px;
   min-width: 22px;
 }
 
-.habit-check.checked {
+.task-check.checked {
   background: var(--cat-color, var(--accent-primary));
   border-color: var(--cat-color, var(--accent-primary));
   box-shadow: 0 0 10px rgba(79,140,255,0.25);
@@ -2293,18 +2293,18 @@ main {
   line-height: 1;
 }
 
-.habit-item-info {
+.task-item-info {
   flex: 1;
   min-width: 0;
 }
 
-.habit-item-top {
+.task-item-top {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
 }
 
-.habit-item-name {
+.task-item-name {
   font-size: var(--fs-base);
   font-weight: 500;
   white-space: nowrap;
@@ -2320,7 +2320,7 @@ main {
   flex-shrink: 0;
 }
 
-.habit-item-meta {
+.task-item-meta {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -2337,7 +2337,7 @@ main {
   white-space: nowrap;
 }
 
-.habit-item-log-btn {
+.task-item-log-btn {
   font-size: 1.1rem;
   min-width: 36px;
   min-height: 36px;
@@ -2348,7 +2348,7 @@ main {
   transition: background var(--transition-fast);
 }
 
-.habit-item-log-btn:hover {
+.task-item-log-btn:hover {
   background: rgba(255,255,255,0.05);
 }
 
@@ -2428,45 +2428,45 @@ main {
   border-color: rgba(79,140,255,0.25);
 }
 
-/* ── Habits List (Card style) ───────────────────────────── */
-.habits-list {
+/* ── Tasks List (Card style) ───────────────────────────── */
+.tasks-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
 }
 
-.habit-card {
+.task-card {
   cursor: pointer;
 }
 
-.habit-card.archived {
+.task-card.archived {
   opacity: 0.6;
 }
 
-.habit-card-header {
+.task-card-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: var(--space-md);
 }
 
-.habit-card-title-row {
+.task-card-title-row {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
   flex-wrap: wrap;
 }
 
-.habit-card-icon {
+.task-card-icon {
   font-size: 1.1rem;
 }
 
-.habit-card-name {
+.task-card-name {
   font-size: var(--fs-base);
   font-weight: 600;
 }
 
-.habit-card-actions {
+.task-card-actions {
   display: flex;
   gap: var(--space-xs);
 }
@@ -2506,8 +2506,8 @@ main {
   background: rgba(79,140,255,0.08);
 }
 
-/* ── Habit Card Stats ───────────────────────────────────── */
-.habit-card-stats {
+/* ── Task Card Stats ───────────────────────────────────── */
+.task-card-stats {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--space-sm);
@@ -2515,19 +2515,19 @@ main {
   margin-bottom: var(--space-sm);
 }
 
-.habit-stat {
+.task-stat {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.15rem;
 }
 
-.habit-stat-value {
+.task-stat-value {
   font-size: var(--fs-lg);
   font-weight: 700;
 }
 
-.habit-stat-label {
+.task-stat-label {
   font-size: var(--fs-xs);
   color: var(--text-muted);
 }
@@ -2545,8 +2545,8 @@ main {
   color: var(--text-muted);
 }
 
-/* ── Habit Card Metrics ─────────────────────────────────── */
-.habit-card-metrics {
+/* ── Task Card Metrics ─────────────────────────────────── */
+.task-card-metrics {
   border-top: 1px solid var(--border-subtle);
   padding-top: var(--space-sm);
   display: flex;
@@ -2554,7 +2554,7 @@ main {
   gap: var(--space-xs);
 }
 
-.habit-metric-row {
+.task-metric-row {
   display: flex;
   align-items: center;
   gap: var(--space-md);
@@ -2562,41 +2562,41 @@ main {
   flex-wrap: wrap;
 }
 
-.habit-metric-info {
+.task-metric-info {
   font-weight: 500;
 }
 
-.habit-metric-target {
+.task-metric-target {
   color: var(--text-muted);
 }
 
-.habit-metric-pr {
+.task-metric-pr {
   color: var(--color-gold);
   font-weight: 600;
 }
 
-/* ── Habit Detail (Bottom Sheet) ────────────────────────── */
-.habit-detail-header {
+/* ── Task Detail (Bottom Sheet) ────────────────────────── */
+.task-detail-header {
   margin-bottom: var(--space-lg);
 }
 
-.habit-detail-header h2 {
+.task-detail-header h2 {
   font-size: var(--fs-xl);
   font-weight: 700;
   margin-bottom: var(--space-sm);
 }
 
-.habit-detail-stats {
+.task-detail-stats {
   display: flex;
   gap: var(--space-lg);
   margin-top: var(--space-md);
 }
 
-.habit-detail-section {
+.task-detail-section {
   margin-top: var(--space-lg);
 }
 
-.habit-detail-section h3 {
+.task-detail-section h3 {
   font-size: var(--fs-base);
   font-weight: 600;
   margin-bottom: var(--space-md);
@@ -2684,14 +2684,14 @@ main {
   font-size: var(--fs-sm);
 }
 
-.routine-habits {
+.routine-tasks {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
   margin-bottom: var(--space-md);
 }
 
-.routine-habit-item {
+.routine-task-item {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -2700,7 +2700,7 @@ main {
   transition: background var(--transition-fast), opacity var(--transition-base);
 }
 
-.routine-habit-item.completed {
+.routine-task-item.completed {
   opacity: 0.5;
   text-decoration: line-through;
 }
@@ -2755,7 +2755,7 @@ main {
   margin-bottom: var(--space-sm);
 }
 
-.log-entry-habit {
+.log-entry-task {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -2851,7 +2851,7 @@ main {
   font-weight: 600;
 }
 
-.record-habit {
+.record-task {
   font-size: var(--fs-sm);
 }
 
@@ -3218,14 +3218,14 @@ main {
   background: rgba(79,140,255,0.08);
 }
 
-/* ── Habit Selector (Routine Modal) ─────────────────────── */
-.habit-selector {
+/* ── Task Selector (Routine Modal) ─────────────────────── */
+.task-selector {
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
 }
 
-.habit-select-item {
+.task-select-item {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -3239,17 +3239,17 @@ main {
   min-height: 44px;
 }
 
-.habit-select-item:hover {
+.task-select-item:hover {
   background: rgba(255,255,255,0.03);
 }
 
-.habit-select-item input[type="checkbox"] {
+.task-select-item input[type="checkbox"] {
   width: 18px;
   height: 18px;
   accent-color: var(--accent-primary);
 }
 
-.habit-select-dot {
+.task-select-dot {
   width: 8px;
   height: 8px;
   border-radius: var(--radius-circle);
