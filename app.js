@@ -346,7 +346,6 @@
     switch (state.activeTab) {
       case 'dashboard': renderDashboard(); break;
       case 'tasks': renderTasks(); break;
-      case 'routines': renderRoutines(); break;
       case 'log': renderLog(); break;
       case 'progress': renderProgress(); break;
     }
@@ -613,8 +612,16 @@
 
     container.innerHTML = `
       <div class="view-header">
-        <h1>Tasks</h1>
-        <p class="text-muted">${activeTasks.length} active task${activeTasks.length !== 1 ? 's' : ''}</p>
+        <h1>Tasks & Routines</h1>
+        <p class="text-muted">${activeTasks.length} active task${activeTasks.length !== 1 ? 's' : ''} across ${state.routines.length} routine${state.routines.length !== 1 ? 's' : ''}</p>
+      </div>
+
+      ${state.routines.length > 0 ? `
+        <div class="routines-list mb-lg" id="routines-list"></div>
+      ` : ''}
+
+      <div class="section-header">
+        <h2>Individual Tasks</h2>
       </div>
 
       <div class="category-filter" id="category-filter">
@@ -635,6 +642,7 @@
       ` : ''}
     `;
 
+    if (state.routines.length > 0) renderRoutinesList();
     renderTasksList('all');
     initCategoryFilter();
     if (archivedTasks.length > 0) initArchivedToggle();
@@ -643,7 +651,13 @@
   function renderTasksList(categoryFilter) {
     const container = $('#tasks-list');
     if (!container) return;
-    let tasks = state.tasks.filter(h => !h.archived);
+
+    const tasksInRoutines = new Set();
+    state.routines.forEach(r => {
+      r.taskIds.forEach(id => tasksInRoutines.add(id));
+    });
+
+    let tasks = state.tasks.filter(h => !h.archived && !tasksInRoutines.has(h.id));
     if (categoryFilter !== 'all') tasks = tasks.filter(h => h.category === categoryFilter);
 
     if (tasks.length === 0) {
@@ -866,24 +880,7 @@
     }, 200);
   }
 
-  // ── Routines View ─────────────────────────────────────────
-  function renderRoutines() {
-    const container = $('#view-routines');
-    const routines = state.routines;
-
-    container.innerHTML = `
-      <div class="view-header">
-        <h1>Routines</h1>
-        <p class="text-muted">Group tasks into daily routines</p>
-      </div>
-
-      <div class="routines-list" id="routines-list">
-        ${routines.length === 0 ? renderEmptyState('No routines yet', 'Create a routine to organize your daily tasks', 'Create Routine') : ''}
-      </div>
-    `;
-
-    if (routines.length > 0) renderRoutinesList();
-  }
+  // ── Routines List ─────────────────────────────────────────
 
   function renderRoutinesList() {
     const container = $('#routines-list');
@@ -924,7 +921,7 @@
                 el('button', {
                   className: `task-check small ${completed ? 'checked' : ''}`,
                   style: { '--cat-color': CATEGORIES[task.category]?.color },
-                  onClick: () => { toggleTaskCompletion(task.id); renderRoutines(); }
+                  onClick: () => { toggleTaskCompletion(task.id); renderTasks(); }
                 }, [
                   el('span', { className: 'check-icon', innerHTML: completed ? '✓' : '' })
                 ]),
