@@ -686,7 +686,7 @@
     `;
   }
 
-  // ── Tasks & Routines View ───────────────────────────────────────
+  // ── Tasks & Workflows View ───────────────────────────────────────
   function renderTasks() {
     const container = $('#view-tasks');
     const activeTasks = state.tasks.filter(h => !h.archived);
@@ -694,8 +694,8 @@
 
     container.innerHTML = `
       <div class="view-header">
-        <h1>Tasks & Routines</h1>
-        <p class="text-muted">${activeTasks.length} active task${activeTasks.length !== 1 ? 's' : ''} across ${state.routines.length} routine${state.routines.length !== 1 ? 's' : ''}</p>
+        <h1>Tasks & Workflows</h1>
+        <p class="text-muted">${activeTasks.length} active task${activeTasks.length !== 1 ? 's' : ''} across ${state.routines.length} workflow${state.routines.length !== 1 ? 's' : ''}</p>
       </div>
 
       ${state.routines.length > 0 ? `
@@ -1456,7 +1456,7 @@
     });
     saveState();
     renderActiveView();
-    showToast(`"${data.name}" routine created! 🔁`);
+    showToast(`"${data.name}" workflow created! 🔁`);
   }
 
   function updateRoutine(routineId, data) {
@@ -1465,14 +1465,14 @@
     Object.assign(routine, data);
     saveState();
     renderActiveView();
-    showToast('Routine updated');
+    showToast('Workflow updated');
   }
 
   function deleteRoutine(routineId) {
     state.routines = state.routines.filter(r => r.id !== routineId);
     saveState();
     renderActiveView();
-    showToast('Routine deleted');
+    showToast('Workflow deleted');
   }
 
   // ── Bottom Sheet System ───────────────────────────────────
@@ -1805,10 +1805,10 @@
     let selectedTasks = isEdit ? [...existingRoutine.taskIds] : [];
 
     const sheet = createBottomSheet(`
-      <h2>${isEdit ? 'Edit Routine' : 'New Routine'}</h2>
+      <h2>${isEdit ? 'Edit Workflow' : 'New Workflow'}</h2>
       <form id="routine-form" class="sheet-form">
         <div class="form-group">
-          <label>Routine Name</label>
+          <label>Workflow Name</label>
           <input type="text" id="routine-name" placeholder="e.g., Morning Power Hour" value="${isEdit ? existingRoutine.name : ''}" required>
         </div>
 
@@ -1827,7 +1827,7 @@
         </div>
 
         <div class="form-group">
-          <label>Tasks in this Routine</label>
+          <label>Tasks in this Workflow</label>
           <div class="task-selector" id="task-selector">
             ${activeTasks.length === 0 ? '<p class="text-muted">Create some tasks first</p>' : ''}
             ${activeTasks.map(h => `
@@ -1845,7 +1845,7 @@
 
         <div class="form-actions">
           <button type="button" class="btn btn-secondary" onclick="document.querySelector('.bottom-sheet-wrapper .bottom-sheet-overlay').click()">Cancel</button>
-          <button type="submit" class="btn btn-primary">${isEdit ? 'Save Changes' : 'Create Routine'}</button>
+          <button type="submit" class="btn btn-primary">${isEdit ? 'Save Changes' : 'Create Workflow'}</button>
         </div>
       </form>
     `);
@@ -1901,7 +1901,7 @@
           ]),
           el('button', { className: 'fab-menu-item', onClick: () => { closeFabMenu(); openRoutineModal(); } }, [
             el('span', { className: 'fab-menu-icon', textContent: '🔁' }),
-            el('span', { textContent: 'New Routine' })
+            el('span', { textContent: 'New Workflow' })
           ])
         ].filter(Boolean))
       ]);
