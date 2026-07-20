@@ -1838,8 +1838,8 @@
                   <input type="checkbox" value="${h.id}" ${selectedTasks.includes(h.id) ? 'checked' : ''} style="position: absolute; opacity: 0; width: 100%; height: 100%; cursor: pointer; margin: 0; z-index: 2;">
                   <div class="task-check__indicator" style="position: absolute; top: -2px; left: -2px; right: -2px; bottom: -2px; border-radius: 6px; pointer-events: none;"></div>
                 </div>
-                <span class="task-select-dot" style="background: ${CATEGORIES[h.category]?.color}"></span>
                 <span>${h.name}</span>
+                <span style="margin-left: auto; font-size: 1.1em; opacity: 0.9;">${CATEGORIES[h.category]?.icon || ''}</span>
               </label>
             `).join('')}
           </div>
