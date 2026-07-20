@@ -474,16 +474,7 @@
         </div>
       </div>
 
-      <div class="card balance-card">
-        <h3>Work / Play Balance</h3>
-        <div class="balance-meter">
-          <div class="balance-fill" style="width: ${balance}%"></div>
-        </div>
-        <div class="balance-labels">
-          <span style="color: #4f8cff">💼 Work ${balance}%</span>
-          <span style="color: #ff6b8a">🎮 Play ${100 - balance}%</span>
-        </div>
-      </div>
+
 
       <div class="section-header">
         <h2>Today's Tasks</h2>
