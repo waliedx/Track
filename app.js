@@ -455,22 +455,24 @@
           <div id="progress-ring-container"></div>
         </div>
 
-        <div class="card stat-card">
-          <span class="stat-icon">🔥</span>
-          <span class="stat-value">${streak}</span>
-          <span class="stat-label">Best Active Streak</span>
-        </div>
+        <div class="dashboard-stats">
+          <div class="card stat-card">
+            <span class="stat-icon">🔥</span>
+            <span class="stat-value">${streak}</span>
+            <span class="stat-label">Best Active Streak</span>
+          </div>
 
-        <div class="card stat-card">
-          <span class="stat-icon">✅</span>
-          <span class="stat-value">${todayLogs.filter(l => l.completed).length}/${activeTasks.length}</span>
-          <span class="stat-label">Done Today</span>
-        </div>
+          <div class="card stat-card">
+            <span class="stat-icon">✅</span>
+            <span class="stat-value">${todayLogs.filter(l => l.completed).length}/${activeTasks.length}</span>
+            <span class="stat-label">Done Today</span>
+          </div>
 
-        <div class="card stat-card">
-          <span class="stat-icon">📊</span>
-          <span class="stat-value">${getCompletionRateAll()}%</span>
-          <span class="stat-label">30-Day Rate</span>
+          <div class="card stat-card">
+            <span class="stat-icon">📊</span>
+            <span class="stat-value">${getCompletionRateAll()}%</span>
+            <span class="stat-label">30-Day Rate</span>
+          </div>
         </div>
       </div>
 

@@ -2094,18 +2094,24 @@ main {
 }
 
 .dashboard-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: var(--space-sm);
   margin-bottom: var(--space-md);
 }
 
+.dashboard-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+}
+
 .progress-card {
-  grid-column: 1 / -1;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--space-lg);
+  flex: 1;
 }
 
 .stat-card .stat-icon {
@@ -3447,7 +3453,23 @@ label.task-select-item:hover {
   }
 
   .dashboard-grid {
-    grid-template-columns: 1fr 1fr 1fr;
+    flex-direction: row;
+    align-items: stretch;
+  }
+  .progress-card {
+    flex: 0 0 320px;
+  }
+  .dashboard-stats {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  .dashboard-stats .stat-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 
   .category-selector {
