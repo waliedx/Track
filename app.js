@@ -51,6 +51,7 @@
     editingTask: null,
     editingRoutine: null
   };
+  let isArchivedExpanded = false;
 
   // ── Utility Helpers ────────────────────────────────────────
   function generateId() {
@@ -802,25 +803,37 @@
     const btn = $('#toggle-archived');
     const list = $('#archived-list');
     if (!btn || !list) return;
-    btn.addEventListener('click', () => {
-      list.classList.toggle('hidden');
-      btn.textContent = list.classList.contains('hidden') ? 'Show' : 'Hide';
-      if (!list.classList.contains('hidden')) {
-        list.innerHTML = '';
-        state.tasks.filter(h => h.archived).forEach(task => {
-          const card = el('div', { className: 'card task-card archived' }, [
-            el('div', { className: 'task-card-header' }, [
-              el('div', { className: 'task-card-title-row' }, [
-                el('span', { textContent: task.name })
-              ]),
-              el('div', { className: 'task-card-actions' }, [
-                el('button', { className: 'btn-icon', textContent: '📤', title: 'Restore', onClick: () => restoreTask(task.id) }),
-                el('button', { className: 'btn-icon', textContent: '🗑️', title: 'Delete', onClick: () => deleteTask(task.id) })
-              ])
+
+    function renderList() {
+      list.innerHTML = '';
+      state.tasks.filter(h => h.archived).forEach(task => {
+        const card = el('div', { className: 'card task-card archived' }, [
+          el('div', { className: 'task-card-header' }, [
+            el('div', { className: 'task-card-title-row' }, [
+              el('span', { textContent: task.name })
+            ]),
+            el('div', { className: 'task-card-actions' }, [
+              el('button', { className: 'btn-icon', textContent: '📤', title: 'Restore', onClick: (e) => { e.stopPropagation(); restoreTask(task.id); } }),
+              el('button', { className: 'btn-icon', textContent: '🗑️', title: 'Delete', onClick: (e) => { e.stopPropagation(); deleteTask(task.id); } })
             ])
-          ]);
-          list.appendChild(card);
-        });
+          ])
+        ]);
+        list.appendChild(card);
+      });
+    }
+
+    if (isArchivedExpanded) {
+      list.classList.remove('hidden');
+      btn.textContent = 'Hide';
+      renderList();
+    }
+
+    btn.addEventListener('click', () => {
+      isArchivedExpanded = !isArchivedExpanded;
+      list.classList.toggle('hidden', !isArchivedExpanded);
+      btn.textContent = isArchivedExpanded ? 'Hide' : 'Show';
+      if (isArchivedExpanded) {
+        renderList();
       }
     });
   }
