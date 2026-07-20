@@ -3243,37 +3243,6 @@ main {
   background: rgba(255,255,255,0.03);
 }
 
-.task-select-item input[type="checkbox"] {
-  appearance: none;
-  -webkit-appearance: none;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  border: 2px solid rgba(255, 255, 255, 0.15);
-  border-radius: 6px;
-  background: var(--bg-surface-2);
-  cursor: pointer;
-  position: relative;
-  transition: all var(--transition-fast);
-  flex-shrink: 0;
-  margin: 0;
-}
-
-.task-select-item input[type="checkbox"]:checked {
-  background: var(--accent-primary);
-  border-color: var(--accent-primary);
-  animation: checkPop 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.task-select-item input[type="checkbox"]:checked::after {
-  content: '✓';
-  color: white;
-  font-size: 14px;
-  font-weight: 800;
-  margin-top: 1px; /* Optical adjustment for the checkmark character */
-}
 
 .task-select-dot {
   width: 8px;
