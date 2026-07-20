@@ -761,8 +761,7 @@
         el('div', { className: 'task-card-header' }, [
           el('div', { className: 'task-card-title-row' }, [
             el('span', { className: 'task-card-icon', textContent: CATEGORIES[task.category]?.icon }),
-            el('h3', { className: 'task-card-name', textContent: task.name }),
-            el('span', { className: `category-tag category-${task.category}`, textContent: CATEGORIES[task.category]?.icon, style: { fontSize: '1.2em', padding: '2px 6px' } })
+            el('h3', { className: 'task-card-name', textContent: task.name })
           ]),
           el('div', { className: 'task-card-actions' }, [
             el('button', { className: 'btn-icon', textContent: '✏️', title: 'Edit', onClick: (e) => { e.stopPropagation(); openTaskModal(task); } }),
@@ -828,8 +827,7 @@
           const card = el('div', { className: 'card task-card archived' }, [
             el('div', { className: 'task-card-header' }, [
               el('div', { className: 'task-card-title-row' }, [
-                el('span', { textContent: task.name }),
-                el('span', { className: `category-tag category-${task.category}`, textContent: CATEGORIES[task.category]?.icon, style: { fontSize: '1.2em', padding: '2px 6px' } })
+                el('span', { textContent: task.name })
               ]),
               el('div', { className: 'task-card-actions' }, [
                 el('button', { className: 'btn-icon', textContent: '📤', title: 'Restore', onClick: () => restoreTask(task.id) }),
