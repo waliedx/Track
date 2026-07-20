@@ -6,6 +6,12 @@
 (function () {
   'use strict';
 
+  // ── Supabase Configuration ────────────────────────────────
+  const SUPABASE_URL = 'https://ahjesnhpbyeldigamuwj.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_qu5L4_xvKUdaQXkAEH8lbA_FS-8T2w5';
+  const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+  let currentUser = null;
+
   // ── Constants ──────────────────────────────────────────────
   const STORAGE_KEY = 'track_app_data';
   const CATEGORIES = {
@@ -85,14 +91,22 @@
     return Math.max(min, Math.min(max, val));
   }
 
-  // ── Data Persistence ──────────────────────────────────────
-  function saveState() {
+  async function saveState() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      const data = {
         tasks: state.tasks,
         routines: state.routines,
         logs: state.logs
-      }));
+      };
+      // Keep local storage in sync as a fallback
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+      if (supabase && currentUser) {
+        // Run in background without awaiting so UI isn't blocked
+        supabase.from('user_data').upsert({ id: currentUser.id, state: data }).then(({ error }) => {
+          if (error) console.error('Supabase save error:', error);
+        });
+      }
     } catch (e) {
       console.warn('Failed to save state:', e);
     }
@@ -100,14 +114,41 @@
 
   function loadState() {
     try {
+      // First load from local storage to show something immediately
       const data = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if (data) {
         state.tasks = data.tasks || [];
         state.routines = data.routines || [];
         state.logs = data.logs || [];
+      } else {
+        state.tasks = [];
+        state.routines = [];
+        state.logs = [];
       }
     } catch (e) {
-      console.warn('Failed to load state:', e);
+      console.warn('Failed to load state locally:', e);
+    }
+  }
+
+  async function syncFromCloud() {
+    if (!supabase || !currentUser) return;
+    try {
+      const { data, error } = await supabase.from('user_data').select('state').eq('id', currentUser.id).single();
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows found"
+        console.error('Supabase fetch error:', error);
+        return;
+      }
+      if (data && data.state) {
+        state.tasks = data.state.tasks || [];
+        state.routines = data.state.routines || [];
+        state.logs = data.state.logs || [];
+        // Save to local storage for future fast loads
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data.state));
+        renderActiveView();
+        updateTopBar();
+      }
+    } catch (e) {
+      console.warn('Failed to sync from cloud:', e);
     }
   }
 
@@ -348,7 +389,48 @@
       case 'tasks': renderTasks(); break;
       case 'log': renderLog(); break;
       case 'progress': renderProgress(); break;
+      case 'settings': renderSettings(); break;
     }
+  }
+
+  // ── Settings View ─────────────────────────────────────────────
+  function renderSettings() {
+    const container = $('#view-settings');
+    container.innerHTML = `
+      <div class="view-header">
+        <h1>Settings</h1>
+        <p class="text-muted">Manage your app data and preferences</p>
+      </div>
+      <div class="card">
+        <h3>Data Management</h3>
+        <p class="text-muted mb-md">Export your data for backup or import from an existing backup.</p>
+        <button class="btn btn-primary mb-sm w-100" id="settings-export-btn">Export Data</button>
+        <button class="btn btn-secondary w-100" id="settings-import-btn">Import Data</button>
+      </div>
+      <div class="card mt-md">
+        <h3>Quick Log</h3>
+        <p class="text-muted mb-md">Quickly log progress for your active tasks.</p>
+        <button class="btn btn-primary w-100" id="settings-quick-log-btn">Open Quick Log</button>
+      </div>
+      <div class="card mt-md" style="border: 1px solid var(--color-danger-bg);">
+        <h3>Account</h3>
+        <p class="text-muted mb-md">Log out of your account to clear your local data.</p>
+        <button class="btn btn-secondary w-100" style="color: var(--color-danger);" id="settings-logout-btn">Log Out</button>
+      </div>
+    `;
+
+    $('#settings-export-btn').addEventListener('click', exportData);
+    $('#settings-import-btn').addEventListener('click', () => $('#import-file').click());
+    $('#settings-quick-log-btn').addEventListener('click', () => {
+      if (state.tasks.length > 0) {
+        openQuickLogPicker();
+      } else {
+        showToast('No active tasks to log');
+      }
+    });
+    $('#settings-logout-btn').addEventListener('click', async () => {
+      if (supabase) await supabase.auth.signOut();
+    });
   }
 
   // ── Dashboard View ────────────────────────────────────────
@@ -604,7 +686,7 @@
     `;
   }
 
-  // ── Tasks View ───────────────────────────────────────────
+  // ── Tasks & Routines View ───────────────────────────────────────
   function renderTasks() {
     const container = $('#view-tasks');
     const activeTasks = state.tasks.filter(h => !h.archived);
@@ -1430,6 +1512,61 @@
     }
   }
 
+  // ── Data Management Functions ─────────────────────────────────────
+  function openDataModal() {
+    const content = `
+      <h2>Data Management</h2>
+      <button class="btn btn-primary" id="export-btn">Export Data</button>
+      <button class="btn btn-secondary" id="import-btn">Import Data</button>
+      <button class="btn btn-text" id="close-data-modal">Cancel</button>
+    `;
+    const wrapper = createBottomSheet(content);
+    document.body.appendChild(wrapper);
+    // Attach listeners
+    $('#export-btn').addEventListener('click', exportData);
+    $('#import-btn').addEventListener('click', () => $('#import-file').click());
+    $('#close-data-modal').addEventListener('click', closeBottomSheet);
+  }
+
+  function exportData() {
+    const data = { tasks: state.tasks, routines: state.routines, logs: state.logs };
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `track_data_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Data exported');
+  }
+
+  function importData(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        state.tasks = data.tasks || [];
+        state.routines = data.routines || [];
+        state.logs = data.logs || [];
+        saveState();
+        renderActiveView();
+        showToast('Data imported');
+      } catch (err) {
+        console.error(err);
+        showToast('Import failed', 'error');
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  // Hook import file input
+  $('#import-file').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) importData(file);
+    e.target.value = '';
+  });
+
   // ── Task Modal ───────────────────────────────────────────
   function openTaskModal(existingTask = null) {
     const isEdit = !!existingTask;
@@ -1764,11 +1901,7 @@
           el('button', { className: 'fab-menu-item', onClick: () => { closeFabMenu(); openRoutineModal(); } }, [
             el('span', { className: 'fab-menu-icon', textContent: '🔁' }),
             el('span', { textContent: 'New Routine' })
-          ]),
-          state.tasks.length > 0 ? el('button', { className: 'fab-menu-item', onClick: () => { closeFabMenu(); openQuickLogPicker(); } }, [
-            el('span', { className: 'fab-menu-icon', textContent: '📝' }),
-            el('span', { textContent: 'Quick Log' })
-          ]) : null
+          ])
         ].filter(Boolean))
       ]);
 
@@ -1864,20 +1997,106 @@
     });
   }
 
+  // ── Authentication ──────────────────────────────────────────
+  function initAuth() {
+    if (!supabase) {
+      // Fallback to local only mode
+      currentUser = { id: 'local_user' };
+      $('#view-login').style.display = 'none';
+      $('#app-main').style.display = 'block';
+      $('#app-header').style.display = 'flex';
+      $('#app-nav').style.display = 'flex';
+      $('.fab').style.display = 'flex';
+      initApp();
+      return;
+    }
+
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (session && session.user) {
+        currentUser = session.user;
+        $('#view-login').style.display = 'none';
+        $('#app-main').style.display = 'block';
+        $('#app-header').style.display = 'flex';
+        $('#app-nav').style.display = 'flex';
+        $('.fab').style.display = 'flex';
+        
+        initApp();
+      } else {
+        currentUser = null;
+        $('#view-login').style.display = 'flex';
+        $('#app-main').style.display = 'none';
+        $('#app-header').style.display = 'none';
+        $('#app-nav').style.display = 'none';
+        $('.fab').style.display = 'none';
+        
+        // Clear state
+        state.tasks = [];
+        state.routines = [];
+        state.logs = [];
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    });
+
+    // Form listeners
+    $('#auth-login-btn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      const email = $('#auth-email').value;
+      const password = $('#auth-password').value;
+      if (!email || !password) return showToast('Enter email and password', 'error');
+      
+      const btn = $('#auth-login-btn');
+      btn.textContent = 'Logging in...';
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      btn.textContent = 'Log In';
+      
+      if (error) {
+        $('#auth-message').textContent = error.message;
+        $('#auth-message').style.color = 'var(--color-danger)';
+      }
+    });
+
+    $('#auth-signup-btn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      const email = $('#auth-email').value;
+      const password = $('#auth-password').value;
+      if (!email || !password) return showToast('Enter email and password', 'error');
+      
+      const btn = $('#auth-signup-btn');
+      btn.textContent = 'Signing up...';
+      const { data, error } = await supabase.auth.signUp({ email, password });
+      btn.textContent = 'Sign Up';
+      
+      if (error) {
+        $('#auth-message').textContent = error.message;
+        $('#auth-message').style.color = 'var(--color-danger)';
+      } else {
+        $('#auth-message').textContent = 'Check your email for the confirmation link!';
+        $('#auth-message').style.color = 'var(--color-health)';
+      }
+    });
+  }
+
   // ── Initialize App ────────────────────────────────────────
-  function init() {
+  let initialized = false;
+  function initApp() {
     loadState();
-    initNavigation();
-    initFab();
-    initPullToRefresh();
+    if (!initialized) {
+      initNavigation();
+      initFab();
+      initPullToRefresh();
+      initialized = true;
+    }
     updateTopBar();
     renderDashboard();
+
+    // Trigger cloud sync in background
+    syncFromCloud();
   }
 
   // Start when DOM is ready
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('DOMContentLoaded', initAuth);
   } else {
-    init();
+    initAuth();
   }
 })();
