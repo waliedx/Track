@@ -3225,7 +3225,7 @@ main {
   gap: var(--space-xs);
 }
 
-.task-select-item {
+label.task-select-item {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
@@ -3239,7 +3239,7 @@ main {
   min-height: 44px;
 }
 
-.task-select-item:hover {
+label.task-select-item:hover {
   background: rgba(255,255,255,0.03);
 }
 
