@@ -443,13 +443,6 @@
     const balance = getWorkPlayBalance();
 
     container.innerHTML = `
-      <div class="dashboard-header">
-        <div class="greeting">
-          <h1>${getGreeting()}</h1>
-          <p class="text-muted">${formatDateFull(today())}</p>
-        </div>
-      </div>
-
       <div class="dashboard-grid">
         <div class="card progress-card">
           <div id="progress-ring-container"></div>
