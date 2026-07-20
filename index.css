@@ -3452,25 +3452,7 @@ label.task-select-item:hover {
     transform: translateX(-50%) translateY(0);
   }
 
-  .dashboard-grid {
-    flex-direction: row;
-    align-items: stretch;
-  }
-  .progress-card {
-    flex: 0 0 320px;
-  }
-  .dashboard-stats {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-  }
-  .dashboard-stats .stat-card {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
+
 
   .category-selector {
     grid-template-columns: repeat(4, 1fr);
