@@ -474,8 +474,6 @@
         </div>
       </div>
 
-      ${renderMetricSnapshots()}
-
       <div class="card balance-card">
         <h3>Work / Play Balance</h3>
         <div class="balance-meter">
