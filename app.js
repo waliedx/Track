@@ -2072,6 +2072,25 @@
         $('#auth-message').style.color = 'var(--color-health)';
       }
     });
+
+    $('#auth-reset-btn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      const email = $('#auth-email').value;
+      if (!email) return showToast('Enter your email first', 'error');
+      
+      const btn = $('#auth-reset-btn');
+      btn.textContent = 'Sending...';
+      const { data, error } = await supabase.auth.resetPasswordForEmail(email);
+      btn.textContent = 'Forgot Password?';
+      
+      if (error) {
+        $('#auth-message').textContent = error.message;
+        $('#auth-message').style.color = 'var(--color-danger)';
+      } else {
+        $('#auth-message').textContent = 'Password reset link sent to your email!';
+        $('#auth-message').style.color = 'var(--color-health)';
+      }
+    });
   }
 
   // ── Initialize App ────────────────────────────────────────
