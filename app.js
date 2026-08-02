@@ -470,19 +470,29 @@
         </div>
       </div>
 
+      <div class="dashboard-main-content">
+        <div class="dashboard-primary">
+          <div class="section-header">
+            <h2>Today's Tasks</h2>
+          </div>
+          <div class="tasks-today-list" id="tasks-today">
+            ${activeTasks.length === 0 ? renderEmptyState('No tasks yet', 'Add your first task to get started!', 'Add Task') : ''}
+          </div>
 
+          ${state.routines.length > 0 ? `
+            <div class="section-header mt-lg">
+              <h2>Workflows</h2>
+            </div>
+            <div class="dashboard-workflows" id="dashboard-workflows"></div>
+          ` : ''}
+        </div>
 
-      <div class="section-header">
-        <h2>Today's Tasks</h2>
-      </div>
-
-      <div class="tasks-today-list" id="tasks-today">
-        ${activeTasks.length === 0 ? renderEmptyState('No tasks yet', 'Add your first task to get started!', 'Add Task') : ''}
-      </div>
-
-      <div class="card heatmap-card">
-        <h3>Activity Heatmap</h3>
-        <div id="heatmap-container"></div>
+        <div class="dashboard-sidebar">
+          <div class="card heatmap-card">
+            <h3>Activity Heatmap</h3>
+            <div id="heatmap-container"></div>
+          </div>
+        </div>
       </div>
 
       ${streak >= 7 ? `<div class="motivation-banner card">${MOTIVATIONAL_MESSAGES[Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)]}</div>` : ''}
@@ -508,6 +518,9 @@
 
     // Render heatmap
     renderHeatmap();
+
+    // Render dashboard workflows
+    renderDashboardWorkflows();
   }
 
   function getGreeting() {
@@ -658,6 +671,51 @@
       data[date] = ratio >= 1 ? 4 : ratio >= 0.75 ? 3 : ratio >= 0.5 ? 2 : ratio > 0 ? 1 : 0;
     }
     Charts.heatmap(container, data, { color: '#4f8cff', weeks: 12 });
+  }
+
+  function renderDashboardWorkflows() {
+    const container = $('#dashboard-workflows');
+    if (!container || state.routines.length === 0) return;
+    container.innerHTML = '';
+
+    state.routines.forEach(routine => {
+      const tasks = routine.taskIds.map(id => getTask(id)).filter(Boolean);
+      const completedCount = tasks.filter(h => isTaskCompletedToday(h.id)).length;
+      const progress = tasks.length > 0 ? Math.round((completedCount / tasks.length) * 100) : 0;
+      const timeLabels = { morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening' };
+
+      const block = el('div', { className: 'card routine-block dashboard-routine' }, [
+        el('div', { className: 'routine-block-header' }, [
+          el('div', { className: 'routine-time-label' }, [
+            el('span', { textContent: getTimeOfDayIcon(routine.timeOfDay || 'morning') }),
+            el('span', { textContent: `${timeLabels[routine.timeOfDay] || 'Morning'} · ${routine.name}` })
+          ])
+        ]),
+        el('div', { className: 'routine-tasks' },
+          tasks.map(task => {
+            const completed = isTaskCompletedToday(task.id);
+            return el('div', { className: `routine-task-item ${completed ? 'completed' : ''}` }, [
+              el('button', {
+                className: `task-check small ${completed ? 'checked' : ''}`,
+                style: { '--cat-color': CATEGORIES[task.category]?.color },
+                onClick: () => { toggleTaskCompletion(task.id); renderDashboard(); }
+              }, [
+                el('span', { className: 'check-icon', innerHTML: completed ? '✓' : '' })
+              ]),
+              el('span', { textContent: task.name }),
+              categoryDot(task.category)
+            ]);
+          })
+        ),
+        el('div', { className: 'routine-progress' }, [
+          el('div', { className: 'routine-progress-bar' }, [
+            el('div', { className: 'routine-progress-fill', style: { width: progress + '%' } })
+          ]),
+          el('span', { className: 'routine-progress-text text-muted', textContent: `${completedCount}/${tasks.length}` })
+        ])
+      ]);
+      container.appendChild(block);
+    });
   }
 
   function renderEmptyState(title, message, btnText) {

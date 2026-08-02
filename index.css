@@ -339,8 +339,14 @@ ul, ol {
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  padding: 1.2rem;
+  padding: 0.875rem; /* Tighter on mobile */
   transition: border-color var(--transition-base), box-shadow var(--transition-base), transform var(--transition-fast);
+}
+
+@media (min-width: 768px) {
+  .card {
+    padding: 1.5rem;
+  }
 }
 
 .card:hover {
@@ -1797,6 +1803,7 @@ select {
     --fs-xl: 1.5rem;
     --fs-2xl: 1.9rem;
     --fs-3xl: 2.4rem;
+    --content-max-width: 900px;
   }
 
   /* Bottom Nav → Left Sidebar */
@@ -1911,6 +1918,70 @@ select {
   .grid-2-desktop { grid-template-columns: repeat(2, 1fr); }
   .grid-3-desktop { grid-template-columns: repeat(3, 1fr); }
   .grid-4-desktop { grid-template-columns: repeat(4, 1fr); }
+
+  /* Dashboard specific grids */
+  .dashboard-grid {
+    flex-direction: row;
+  }
+  
+  .dashboard-grid > .progress-card {
+    flex: 1;
+  }
+
+  .dashboard-grid > .dashboard-stats {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .dashboard-grid > .dashboard-stats > .stat-card {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-md) var(--space-lg);
+  }
+
+  .dashboard-grid > .dashboard-stats > .stat-card .stat-icon {
+    margin-bottom: 0;
+    margin-right: var(--space-sm);
+  }
+
+  /* Dashboard: tasks/workflows left, heatmap right */
+  .dashboard-main-content {
+    flex-direction: row;
+    gap: var(--space-xl);
+    align-items: flex-start;
+  }
+
+  .dashboard-sidebar {
+    width: 320px;
+    position: sticky;
+    top: calc(var(--top-bar-height) + var(--space-lg));
+  }
+
+  .dashboard-workflows {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-sm);
+  }
+
+  .tasks-list, .log-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-sm);
+  }
+
+  .routines-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-sm);
+  }
+
+  .card {
+    padding: 1.5rem; /* Roomier on desktop */
+  }
 }
 
 
@@ -2098,6 +2169,36 @@ main {
   flex-direction: column;
   gap: var(--space-sm);
   margin-bottom: var(--space-md);
+}
+
+/* Dashboard main content: stacks on mobile, side-by-side on desktop */
+.dashboard-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.dashboard-primary {
+  flex: 1;
+  min-width: 0;
+}
+
+.dashboard-sidebar {
+  flex-shrink: 0;
+}
+
+.dashboard-workflows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.dashboard-routine .routine-block-header {
+  margin-bottom: var(--space-xs);
+}
+
+.dashboard-routine .routine-tasks {
+  margin-bottom: var(--space-sm);
 }
 
 .dashboard-stats {
