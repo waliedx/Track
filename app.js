@@ -8,13 +8,13 @@
 
   // ── Firebase Configuration ────────────────────────────────
   const firebaseConfig = {
-    apiKey: "AIzaSyYourActualAPIKeyGoesHere", // Retrieve this from your Firebase Console
+    apiKey: "AIzaSyDArwCIr-Z0G22Vq1LD3voY7PW6MakNWec",
     authDomain: "habbit-tracker-71778.firebaseapp.com",
     projectId: "habbit-tracker-71778",
     storageBucket: "habbit-tracker-71778.firebasestorage.app",
     messagingSenderId: "502688624912",
-    appId: "1:502688624912:web:abcdef1234567890", // Replace with your actual registered Web App ID
-    measurementId: "G-XXXXXXXXXX" // Your Google Analytics Measurement ID
+    appId: "1:502688624912:web:4ed23416b669c1bef87595",
+    measurementId: "G-G3L8BHW0YP"
   };
 
   // Initialize Firebase if the SDK is loaded
