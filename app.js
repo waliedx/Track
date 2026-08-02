@@ -6,10 +6,25 @@
 (function () {
   'use strict';
 
-  // ── Supabase Configuration ────────────────────────────────
-  const SUPABASE_URL = 'https://ahjesnhpbyeldigamuwj.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_qu5L4_xvKUdaQXkAEH8lbA_FS-8T2w5';
-  const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+  // ── Firebase Configuration ────────────────────────────────
+  const firebaseConfig = {
+    apiKey: "AIzaSyYourActualAPIKeyGoesHere", // Retrieve this from your Firebase Console
+    authDomain: "habbit-tracker-71778.firebaseapp.com",
+    projectId: "habbit-tracker-71778",
+    storageBucket: "habbit-tracker-71778.firebasestorage.app",
+    messagingSenderId: "502688624912",
+    appId: "1:502688624912:web:abcdef1234567890", // Replace with your actual registered Web App ID
+    measurementId: "G-XXXXXXXXXX" // Your Google Analytics Measurement ID
+  };
+
+  // Initialize Firebase if the SDK is loaded
+  let auth = null;
+  let db = null;
+  if (window.firebase) {
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+  }
   let currentUser = null;
 
   // ── Constants ──────────────────────────────────────────────
@@ -102,10 +117,10 @@
       // Keep local storage in sync as a fallback
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
-      if (supabase && currentUser) {
+      if (db && currentUser) {
         // Run in background without awaiting so UI isn't blocked
-        supabase.from('user_data').upsert({ id: currentUser.id, state: data }).then(({ error }) => {
-          if (error) console.error('Supabase save error:', error);
+        db.collection('user_data').doc(currentUser.uid).set({ state: data }, { merge: true }).catch((error) => {
+          console.error('Firebase save error:', error);
         });
       }
     } catch (e) {
@@ -132,13 +147,11 @@
   }
 
   async function syncFromCloud() {
-    if (!supabase || !currentUser) return;
+    if (!db || !currentUser) return;
     try {
-      const { data, error } = await supabase.from('user_data').select('state').eq('id', currentUser.id).single();
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows found"
-        console.error('Supabase fetch error:', error);
-        return;
-      }
+      const doc = await db.collection('user_data').doc(currentUser.uid).get();
+      if (!doc.exists) return;
+      const data = doc.data();
       if (data && data.state) {
         state.tasks = data.state.tasks || [];
         state.routines = data.state.routines || [];
@@ -430,7 +443,7 @@
       }
     });
     $('#settings-logout-btn').addEventListener('click', async () => {
-      if (supabase) await supabase.auth.signOut();
+      if (auth) await auth.signOut();
     });
   }
 
@@ -2055,21 +2068,14 @@
 
   // ── Authentication ──────────────────────────────────────────
   function initAuth() {
-    if (!supabase) {
-      // Fallback to local only mode
-      currentUser = { id: 'local_user' };
-      $('#view-login').style.display = 'none';
-      $('#app-main').style.display = 'block';
-      $('#app-header').style.display = 'flex';
-      $('#app-nav').style.display = 'flex';
-      $('.fab').style.display = 'flex';
-      initApp();
+    if (!auth) {
+      console.warn('Firebase not initialized. Auth disabled.');
       return;
     }
 
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (session && session.user) {
-        currentUser = session.user;
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        currentUser = user;
         $('#view-login').style.display = 'none';
         $('#app-main').style.display = 'block';
         $('#app-header').style.display = 'flex';
@@ -2102,12 +2108,13 @@
       
       const btn = $('#auth-login-btn');
       btn.textContent = 'Logging in...';
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      btn.textContent = 'Log In';
-      
-      if (error) {
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+      } catch (error) {
         $('#auth-message').textContent = error.message;
         $('#auth-message').style.color = 'var(--color-danger)';
+      } finally {
+        btn.textContent = 'Log In';
       }
     });
 
@@ -2119,15 +2126,15 @@
       
       const btn = $('#auth-signup-btn');
       btn.textContent = 'Signing up...';
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      btn.textContent = 'Sign Up';
-      
-      if (error) {
+      try {
+        await auth.createUserWithEmailAndPassword(email, password);
+        $('#auth-message').textContent = 'Account created successfully!';
+        $('#auth-message').style.color = 'var(--color-health)';
+      } catch (error) {
         $('#auth-message').textContent = error.message;
         $('#auth-message').style.color = 'var(--color-danger)';
-      } else {
-        $('#auth-message').textContent = 'Check your email for the confirmation link!';
-        $('#auth-message').style.color = 'var(--color-health)';
+      } finally {
+        btn.textContent = 'Sign Up';
       }
     });
 
@@ -2138,15 +2145,15 @@
       
       const btn = $('#auth-reset-btn');
       btn.textContent = 'Sending...';
-      const { data, error } = await supabase.auth.resetPasswordForEmail(email);
-      btn.textContent = 'Forgot Password?';
-      
-      if (error) {
-        $('#auth-message').textContent = error.message;
-        $('#auth-message').style.color = 'var(--color-danger)';
-      } else {
+      try {
+        await auth.sendPasswordResetEmail(email);
         $('#auth-message').textContent = 'Password reset link sent to your email!';
         $('#auth-message').style.color = 'var(--color-health)';
+      } catch (error) {
+        $('#auth-message').textContent = error.message;
+        $('#auth-message').style.color = 'var(--color-danger)';
+      } finally {
+        btn.textContent = 'Forgot Password?';
       }
     });
   }
